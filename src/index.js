@@ -7,6 +7,7 @@ import Pino from 'pino';
 import OnExit from 'signal-exit';
 import TinySonic from 'tinysonic';
 import SuperError from 'super-error';
+import makeDebug from 'debug';
 
 import Errors from './errors';
 import Constants from './constants';
@@ -23,6 +24,8 @@ import ClientResponse from './clientResponse';
 import Serializers from './serializer';
 import Add from './add';
 
+const debug = makeDebug('mostly:core');
+
 const defaultConfig = {
   timeout: 2000,
   debug: false,
@@ -36,7 +39,7 @@ const defaultConfig = {
 
 export default class MostlyCore extends EventEmitter {
 
-  constructor (transport, params) {
+  constructor(transport, params) {
     super()
 
     this._config = Object.assign(defaultConfig, params || {})
@@ -155,28 +158,28 @@ export default class MostlyCore extends EventEmitter {
   /**
    * Return all registered plugins
    */
-  get plugins () {
+  get plugins() {
     return this._plugins
   }
 
   /**
    * Return the bloomrun instance
    */
-  get router () {
+  get router() {
     return this._router
   }
 
   /**
    * Return the heavy instance
    */
-  get load () {
+  get load() {
     return this._heavy.load
   }
 
   /**
    * Return the shared object of all exposed data
    */
-  get exposition () {
+  get exposition() {
     return this._exposition
   }
 
@@ -184,7 +187,7 @@ export default class MostlyCore extends EventEmitter {
    * Exposed data in context of the current plugin
    * It is accessible by this.expositions[<plugin>][<key>]
    */
-  expose (key, object) {
+  expose(key, object) {
     let pluginName = this.plugin$.attributes.name
 
     if (!this._exposition[pluginName]) {
@@ -198,27 +201,27 @@ export default class MostlyCore extends EventEmitter {
   /**
    * Return the underlying NATS driver
    */
-  get transport () {
+  get transport() {
     return this._transport.driver
   }
 
   /**
    * Return all registered topics
    */
-  get topics () {
+  get topics() {
     return this._topics
   }
 
   /**
    * Add an extension. Extensions are called in serie
    */
-  ext (type, handler) {
+  ext(type, handler) {
     if (!this._extensions[type]) {
       let error = new Errors.MostlyError(Constants.INVALID_EXTENSION_TYPE, {
         type
       })
       this.log.error(error)
-      throw (error)
+      throw(error)
     }
 
     this._extensions[type].add(handler)
@@ -227,7 +230,7 @@ export default class MostlyCore extends EventEmitter {
   /**
    * Use a plugin.
    */
-  use (params, options) {
+  use(params, options) {
     // use plugin infos from package.json
     if (_.isObject(params.attributes.pkg)) {
       params.attributes = params.attributes || {}
@@ -244,7 +247,7 @@ export default class MostlyCore extends EventEmitter {
     if (!params.attributes.name) {
       let error = new Errors.MostlyError(Constants.PLUGIN_NAME_REQUIRED)
       this.log.error(error)
-      throw (error)
+      throw(error)
     }
 
     // check if plugin is already registered
@@ -253,7 +256,7 @@ export default class MostlyCore extends EventEmitter {
       if (params.attributes.multiple !== true) {
         let error = new Errors.MostlyError(Constants.PLUGIN_ALREADY_REGISTERED, params.attributes.name)
         this.log.error(error)
-        throw (error)
+        throw(error)
       }
     }
 
@@ -286,25 +289,25 @@ export default class MostlyCore extends EventEmitter {
    * Change the current plugin configuration
    * e.g to set the payload validator
    */
-  setOption (key, value) {
+  setOption(key, value) {
     this.plugin$.options[key] = value
   }
 
   /**
    * Change the base configuration.
    */
-  setConfig (key, value) {
+  setConfig(key, value) {
     this._config[key] = value
   }
 
-  get config () {
+  get config() {
     return this._config
   }
 
   /**
    * Exit the process
    */
-  fatal () {
+  fatal() {
     this.close()
 
     process.exit(1)
@@ -313,7 +316,7 @@ export default class MostlyCore extends EventEmitter {
   /**
    * Create a custom super error object without to start hemera
    */
-  static createError (name) {
+  static createError(name) {
     return SuperError.subclass(name)
   }
 
@@ -321,7 +324,7 @@ export default class MostlyCore extends EventEmitter {
    * Decorate the root instance with a method or other value
    * Value is globaly accesible
    */
-  decorate (prop, value) {
+  decorate(prop, value) {
     if (this._decorations[prop]) {
       throw new Error(Constants.DECORATION_ALREADY_DEFINED)
     } else if (this[prop]) {
@@ -336,21 +339,21 @@ export default class MostlyCore extends EventEmitter {
   /**
    * Create a custom super error object in a running hemera instance
    */
-  createError (name) {
+  createError(name) {
     return SuperError.subclass(name)
   }
 
   /**
    * Return all hemera errors
    */
-  static get errors () {
+  static get errors() {
     return Errors
   }
 
   /**
    * Ready callback when Nats connected
    */
-  ready (cb) {
+  ready(cb) {
     this._transport.driver.on('connect', () => {
       this.log.info(Constants.TRANSPORT_CONNECTED)
 
@@ -366,7 +369,7 @@ export default class MostlyCore extends EventEmitter {
         if (err) {
           let error = new Errors.MostlyError(Constants.PLUGIN_REGISTRATION_ERROR)
           this.log.error(error)
-          throw (error)
+          throw(error)
         }
         if (_.isFunction(cb)) {
           cb.call(this)
@@ -378,7 +381,7 @@ export default class MostlyCore extends EventEmitter {
   /**
    * Build the final payload for the response
    */
-  _buildMessage () {
+  _buildMessage() {
     let result = this._response
 
     let message = {
@@ -409,8 +412,8 @@ export default class MostlyCore extends EventEmitter {
    * Last step before the response is send to the callee.
    * The preResponse extension is invoked and previous errors are evaluated.
    */
-  finish () {
-    function onServerPreResponseHandler (err, value) {
+  finish() {
+    function onServerPreResponseHandler(err, value) {
       const self = this
 
       // check if an error was already wrapped
@@ -466,7 +469,7 @@ export default class MostlyCore extends EventEmitter {
    * Attach one handler to the topic subscriber.
    * With subToMany and maxMessages you control NATS specific behaviour.
    */
-  subscribe (topic, subToMany, maxMessages) {
+  subscribe(topic, subToMany, maxMessages) {
     const self = this
 
     // avoid duplicate subscribers of the emit stream
@@ -482,35 +485,36 @@ export default class MostlyCore extends EventEmitter {
      * @param {any} resp
      * @returns
      */
-    function actionHandler (err, resp) {
+    function actionHandler(err, resp) {
       const self = this
 
       if (err) {
+        debug('actionHandler:error', err);
         if (err instanceof SuperError) {
           // try to get rootCause then cause and last the thrown error
           self._response.error = new Errors.BusinessError(Constants.BUSINESS_ERROR, {
             pattern: self._pattern,
             app: self._config.name
-          }).causedBy(err.rootCause || err.cause || err)
+          }).causedBy(err.rootCause || err.cause || err);
         } else {
           self._response.error = new Errors.BusinessError(Constants.BUSINESS_ERROR, {
             pattern: self._pattern,
             app: self._config.name
-          }).causedBy(err)
+          }).causedBy(err);
         }
 
-        return self.finish()
+        return self.finish();
       }
 
       // assign action result
-      self._response.payload = resp
+      self._response.payload = resp;
       // delete error we have payload
-      self._response.error = null
+      self._response.error = null;
 
-      self.finish()
+      self.finish();
     }
 
-    function onServerPreHandler (err, value) {
+    function onServerPreHandler(err, value) {
       const self = this
 
       if (err) {
@@ -560,7 +564,7 @@ export default class MostlyCore extends EventEmitter {
           // execute RPC action
           action(self._request.payload.pattern, actionHandler.bind(self))
         })
-      } catch (err) {
+      } catch(err) {
         // try to get rootCause then cause and last the thrown error
         if (err instanceof SuperError) {
           self._response.error = new Errors.ImplementationError(Constants.IMPLEMENTATION_ERROR, {
@@ -579,7 +583,7 @@ export default class MostlyCore extends EventEmitter {
       }
     }
 
-    function onServerPreRequestHandler (err, value) {
+    function onServerPreRequestHandler(err, value) {
       let self = this
 
       if (err) {
@@ -652,7 +656,7 @@ export default class MostlyCore extends EventEmitter {
   /**
    * Unsubscribe a topic from NATS
    */
-  remove (topic, maxMessages) {
+  remove(topic, maxMessages) {
     const self = this
     const subId = self._topics[topic]
     if (subId) {
@@ -668,7 +672,7 @@ export default class MostlyCore extends EventEmitter {
   /**
    * The topic is subscribed on NATS and can be called from any client.
    */
-  add (pattern, cb) {
+  add(pattern, cb) {
     // check for use quick syntax for JSON objects
     if (_.isString(pattern)) {
       pattern = TinySonic(pattern)
@@ -681,7 +685,7 @@ export default class MostlyCore extends EventEmitter {
       })
 
       this.log.error(error)
-      throw (error)
+      throw(error)
     }
 
     let origPattern = _.cloneDeep(pattern)
@@ -705,7 +709,7 @@ export default class MostlyCore extends EventEmitter {
       })
 
       this.log.error(error)
-      throw (error)
+      throw(error)
     }
 
     // add to bloomrun
@@ -722,7 +726,7 @@ export default class MostlyCore extends EventEmitter {
   /**
    * Start an action.
    */
-  act (pattern, cb) {
+  act(pattern, cb) {
     // check for use quick syntax for JSON objects
     if (_.isString(pattern)) {
       pattern = TinySonic(pattern)
@@ -735,10 +739,10 @@ export default class MostlyCore extends EventEmitter {
       })
 
       this.log.error(error)
-      throw (error)
+      throw(error)
     }
 
-    function onClientPostRequestHandler (err) {
+    function onClientPostRequestHandler(err) {
       const self = this
       if (err) {
         let error = new Errors.MostlyError(Constants.EXTENSION_ERROR).causedBy(err)
@@ -754,6 +758,7 @@ export default class MostlyCore extends EventEmitter {
 
       if (self._actCallback) {
         if (self._response.payload.error) {
+          debug('act:response.payload.error', self._response.payload.error);
           let responseError = Errio.fromObject(self._response.payload.error)
           let responseErrorCause = responseError.cause
           let error = new Errors.BusinessError(Constants.BUSINESS_ERROR, {
@@ -769,7 +774,7 @@ export default class MostlyCore extends EventEmitter {
       }
     }
 
-    function sendRequestHandler (response) {
+    function sendRequestHandler(response) {
       const self = this
       const res = self._decoder.decode.call(self, response)
       self._response.payload = res.value
@@ -790,7 +795,7 @@ export default class MostlyCore extends EventEmitter {
         }
 
         self._extensions.onClientPostRequest.invoke(self, onClientPostRequestHandler)
-      } catch (err) {
+      } catch(err) {
         let error = new Errors.FatalError(Constants.FATAL_ERROR, {
           pattern: self._cleanPattern
         }).causedBy(err)
@@ -804,7 +809,7 @@ export default class MostlyCore extends EventEmitter {
       }
     }
 
-    function onPreRequestHandler (err) {
+    function onPreRequestHandler(err) {
       const self = this
 
       let m = self._encoder.encode.call(self, self._message)
@@ -875,10 +880,10 @@ export default class MostlyCore extends EventEmitter {
    * - Service is actually still processing the request (service takes too long)
    * - Service was processing the request but crashed (service error)
    */
-  handleTimeout (sid, pattern) {
+  handleTimeout(sid, pattern) {
     const timeout = pattern.timeout$ || this._config.timeout
 
-    function onClientPostRequestHandler (err) {
+    function onClientPostRequestHandler(err) {
       const self = this
       if (err) {
         let error = new Errors.MostlyError(Constants.EXTENSION_ERROR).causedBy(err)
@@ -890,7 +895,7 @@ export default class MostlyCore extends EventEmitter {
       if (self._actCallback) {
         try {
           self._actCallback(self._response.error)
-        } catch (err) {
+        } catch(err) {
           let error = new Errors.FatalError(Constants.FATAL_ERROR, {
             pattern
           }).causedBy(err)
@@ -922,7 +927,7 @@ export default class MostlyCore extends EventEmitter {
    * Create new instance of hemera but with pointer on the previous propertys
    * so we are able to create a scope per act without lossing the reference to the core api.
    */
-  createContext () {
+  createContext() {
     const self = this
 
     const ctx = Object.create(self)
@@ -933,14 +938,14 @@ export default class MostlyCore extends EventEmitter {
   /**
    * Return the list of all registered actions
    */
-  list (pattern, options) {
+  list(pattern, options) {
     return this._router.list(pattern, options)
   }
 
   /**
    * Close the process watcher and the underlying transort driver.
    */
-  close () {
+  close() {
     this._heavy.stop()
 
     return this._transport.close()
