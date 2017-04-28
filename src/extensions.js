@@ -1,6 +1,4 @@
-'use strict'
-
-const Util = require('./util')
+import Util from './util';
 
 module.exports.onClientPreRequest = [function onClientPreRequest (next) {
   let ctx = this

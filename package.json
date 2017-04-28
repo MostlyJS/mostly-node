@@ -21,9 +21,13 @@
   },
   "dependencies": {
     "bloomrun": "^3.0.4",
+    "errio": "^1.2.2",
+    "fast-safe-stringify": "^1.1.13",
     "heavy": "^4.0.3",
     "lodash": "^4.17.4",
-    "nats-hemera": "^1.0.1",
+    "pino": "^4.3.0",
+    "signal-exit": "^3.0.2",
+    "super-error": "^2.0.0",
     "tinysonic": "^1.2.0"
   },
   "devDependencies": {

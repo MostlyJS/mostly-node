@@ -1,4 +1,4 @@
-const SafeStringify = require('fast-safe-stringify')
+import SafeStringify from 'fast-safe-stringify';
 
 export default class Encoder {
 

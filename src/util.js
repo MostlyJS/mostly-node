@@ -1,19 +1,10 @@
-'use strict'
-
-const _ = require('lodash')
+import _ from 'lodash';
 
 const ID_LENGTH = 16
 const ID_DIGITS = '0123456789abcdef'
 
-/**
- * @class Util
- */
-class Util {
-  /**
-   * @returns
-   *
-   * @memberOf Util
-   */
+export default class Util {
+
   static randomId () {
     let n = ''
     for (let i = 0; i < ID_LENGTH; i++) {
@@ -27,16 +18,6 @@ class Util {
     return n
   }
 
-  /**
-   *
-   *
-   * @static
-   * @param {any} array
-   * @param {any} method
-   * @param {any} callback
-   *
-   * @memberOf Util
-   */
   static serial (array, method, callback) {
     if (!array.length) {
       callback()
@@ -62,27 +43,15 @@ class Util {
       iterate()
     }
   }
+
   /**
    * Get high resolution time in nanoseconds
-   *
-   * @static
-   * @returns
-   *
-   * @memberOf Util
    */
   static nowHrTime () {
     const hrtime = process.hrtime()
     return Math.floor(hrtime[0] * 1000000 + hrtime[1] / 1000)
   }
-  /**
-   *
-   *
-   * @static
-   * @param {any} obj
-   * @returns
-   *
-   * @memberOf Util
-   */
+
   static extractSchema (obj) {
     if (obj === null) return obj
 
@@ -90,13 +59,7 @@ class Util {
       return _.isObject(val)
     })
   }
-  /**
-   * @static
-   * @param {any} obj
-   * @returns
-   *
-   * @memberOf Util
-   */
+
   static cleanPattern (obj) {
     if (obj === null) return obj
 
@@ -105,13 +68,6 @@ class Util {
     })
   }
 
-  /**
-   * @static
-   * @param {any} obj
-   * @returns
-   *
-   * @memberOf Util
-   */
   static cleanFromSpecialVars (obj) {
     if (obj === null) return obj
 
@@ -120,12 +76,6 @@ class Util {
     })
   }
 
-  /**
-   * @param {any} args
-   * @returns
-   *
-   * @memberOf Util
-   */
   static pattern (args) {
     if (_.isString(args)) {
       return args
@@ -144,5 +94,3 @@ class Util {
     return sb.join(',')
   }
 }
-
-module.exports = Util

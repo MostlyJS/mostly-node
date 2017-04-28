@@ -1,30 +1,29 @@
-const EventEmitter = require('events')
-const Bloomrun = require('bloomrun')
-const Errio = require('errio')
-const Hoek = require('hoek')
-const Heavy = require('heavy')
-const _ = require('lodash')
-const Pino = require('pino')
-const OnExit = require('signal-exit')
-const TinySonic = require('tinysonic')
-const SuperError = require('super-error')
+import EventEmitter from 'events';
+import Bloomrun from 'bloomrun';
+import Errio from 'errio';
+import Heavy from 'heavy';
+import _ from 'lodash';
+import Pino from 'pino';
+import OnExit from 'signal-exit';
+import TinySonic from 'tinysonic';
+import SuperError from 'super-error';
 
-const Errors = require('./errors')
-const Constants = require('./constants')
-const Extension = require('./extension')
-const Util = require('./util')
-const NatsTransport = require('./transport')
-const DefaultExtensions = require('./extensions')
-const DefaultEncoder = require('./encoder')
-const DefaultDecoder = require('./decoder')
-const ServerResponse = require('./serverResponse')
-const ServerRequest = require('./serverRequest')
-const ClientRequest = require('./clientRequest')
-const ClientResponse = require('./clientResponse')
-const Serializers = require('./serializer')
-const Add = require('./add')
+import Errors from './errors';
+import Constants from './constants';
+import Extension from './extension';
+import Util from './util';
+import NatsTransport from './transport';
+import DefaultExtensions from './extensions';
+import DefaultEncoder from './encoder';
+import DefaultDecoder from './decoder';
+import ServerResponse from './serverResponse';
+import ServerRequest from './serverRequest';
+import ClientRequest from './clientRequest';
+import ClientResponse from './clientResponse';
+import Serializers from './serializer';
+import Add from './add';
 
-var defaultConfig = {
+const defaultConfig = {
   timeout: 2000,
   debug: false,
   name: 'mostly-' + Util.randomId(),
@@ -40,7 +39,7 @@ export default class MostlyCore extends EventEmitter {
   constructor (transport, params) {
     super()
 
-    this._config = Hoek.applyToDefaults(defaultConfig, params || {})
+    this._config = Object.assign(defaultConfig, params || {})
     this._router = Bloomrun()
     this._heavy = new Heavy(this._config.load)
     this._transport = new NatsTransport({
@@ -232,13 +231,13 @@ export default class MostlyCore extends EventEmitter {
     // use plugin infos from package.json
     if (_.isObject(params.attributes.pkg)) {
       params.attributes = params.attributes || {}
-      params.attributes = Hoek.applyToDefaults(params.attributes, _.pick(params.attributes.pkg, ['name', 'description', 'version']))
+      params.attributes = Object.assign(params.attributes, _.pick(params.attributes.pkg, ['name', 'description', 'version']))
     }
 
     // pass options as second argument during plugin registration
     if (_.isObject(options)) {
       params.options = params.options || {}
-      params.options = Hoek.applyToDefaults(params.options, options)
+      params.options = Object.assign(params.options, options)
     }
 
     // plugin name is required
