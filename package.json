@@ -1,6 +1,6 @@
 {
   "name": "mostly-node",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "MostlyJS microservice on Node.js",
   "author": "Forafish",
   "license": "MIT",
@@ -23,6 +23,7 @@
     "url": "git+https://github.com/MostlyJS/mostly-node.git"
   },
   "dependencies": {
+    "babel-polyfill": "^6.23.0",
     "bloomrun": "^3.0.4",
     "debug": "^2.6.6",
     "errio": "^1.2.2",
