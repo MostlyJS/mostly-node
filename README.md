@@ -11,7 +11,7 @@ It provides well integration with existing node frameworks so that you can chang
 
 * [Express](http://www.expressjs.com) with [express-gateway](https://github.com/MostlyJS/mostly-demos)
 * [Feathers](https://feathersjs.com/) with [mostly-feathers](http://https://github.com/MostlyJS/mostly-feathers) and [mostly-feathers-rest](http://https://github.com/MostlyJS/mostly-feathers-rest)
-* [Poplarjs](https://github.com/poplarjs/poplar) with [mostly-poplarjs](http://https://github.com/MostlyJS/mostly-poplarjs) and [mostly-poplarjs-rest](http://https://github.com/MostlyJS/mostly-poplarjs-rest) 
+* [Poplarjs](https://github.com/poplarjs/poplar) with [mostly-poplarjs](http://https://github.com/MostlyJS/mostly-poplarjs) and [mostly-poplarjs-rest](http://https://github.com/MostlyJS/mostly-poplarjs-rest)
 
 Integration with Koa and Hapi is also planned.
 
@@ -19,9 +19,15 @@ Integration with Koa and Hapi is also planned.
 
 ## Installation
 
+#### 1. Install Mostly-node and NATS driver
 ```bash
+npm install nats
 npm install mostly-node
 ```
+
+#### 2. Install and Run NATS Server
+
+https://nats.io/documentation/tutorials/gnatsd-install
 
 ## Quick Example
 
