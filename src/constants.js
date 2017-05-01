@@ -26,4 +26,4 @@ module.exports = {
   PLUGIN_REGISTRATION_ERROR: 'Error during plugin registration',
   DECORATION_ALREADY_DEFINED: 'Server decoration already defined',
   OVERRIDE_BUILTIN_METHOD_NOT_ALLOWED: 'Cannot override the built-in server interface method'
-}
+};

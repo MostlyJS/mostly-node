@@ -21,6 +21,7 @@
   },
   "dependencies": {
     "bloomrun": "^3.0.4",
+    "debug": "^2.6.6",
     "errio": "^1.2.2",
     "fast-safe-stringify": "^1.1.13",
     "heavy": "^4.0.3",
@@ -32,10 +33,18 @@
   },
   "devDependencies": {
     "babel-core": "^6.24.1",
+    "babel-eslint": "^7.2.3",
     "babel-plugin-add-module-exports": "^0.2.1",
     "babel-plugin-root-import": "^5.1.0",
     "babel-preset-env": "^1.4.0",
     "eslint-if-supported": "^1.0.1",
+    "gulp": "^3.9.1",
+    "gulp-babel": "^6.1.2",
+    "gulp-changed": "^3.0.0",
+    "gulp-eslint": "^3.0.1",
+    "gulp-livereload": "^3.8.1",
+    "gulp-nodemon": "^2.2.1",
+    "gulp-sourcemaps": "^2.6.0",
     "istanbul": "^0.4.5",
     "mocha": "^3.3.0",
     "rimraf": "^2.6.1"

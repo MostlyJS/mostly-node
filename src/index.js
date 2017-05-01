@@ -35,69 +35,69 @@ const defaultConfig = {
   load: {
     sampleInterval: 0
   }
-}
+};
 
 export default class MostlyCore extends EventEmitter {
 
   constructor(transport, params) {
-    super()
+    super();
 
-    this._config = Object.assign(defaultConfig, params || {})
-    this._router = Bloomrun()
-    this._heavy = new Heavy(this._config.load)
+    this._config = Object.assign(defaultConfig, params || {});
+    this._router = Bloomrun();
+    this._heavy = new Heavy(this._config.load);
     this._transport = new NatsTransport({
       transport
-    })
-    this._topics = {}
-    this._exposition = {}
+    });
+    this._topics = {};
+    this._exposition = {};
 
     // special variables for the new execution context
-    this.context$ = {}
-    this.meta$ = {}
-    this.delegate$ = {}
-    this.auth$ = {}
+    this.context$ = {};
+    this.meta$ = {};
+    this.delegate$ = {};
+    this.auth$ = {};
     this.plugin$ = {
       options: {},
       attributes: {
         name: 'core'
       }
-    }
-    this.trace$ = {}
+    };
+    this.trace$ = {};
     this.request$ = {
       duration: 0,
       parentId: '',
       timestamp: 0,
       type: 'request',
       id: ''
-    }
+    };
 
     // client and server locales
-    this._shouldCrash = false
-    this._topic = ''
-    this._replyTo = ''
-    this._request = null
-    this._response = null
-    this._pattern = null
-    this._actMeta = null
-    this._actCallback = null
-    this._cleanPattern = ''
-    this._pluginRegistrations = []
-    this._decorations = {}
-    // create reference to root hemera instance
-    this._root = this
+    this._shouldCrash = false;
+    this._topic = '';
+    this._replyTo = '';
+    this._request = null;
+    this._response = null;
+    this._pattern = null;
+    this._actMeta = null;
+    this._actCallback = null;
+    this._cleanPattern = '';
+    this._pluginRegistrations = [];
+    this._decorations = {};
+    // create reference to root mostly instance
+    this._root = this;
 
     // contains the list of all registered plugins
     // the core is also a plugin
     this._plugins = {
       core: this.plugin$.attributes
-    }
+    };
 
     this._encoder = {
       encode: DefaultEncoder.encode
-    }
+    };
     this._decoder = {
       decode: DefaultDecoder.decode
-    }
+    };
 
     // define extension points
     this._extensions = {
@@ -106,31 +106,31 @@ export default class MostlyCore extends EventEmitter {
       onServerPreHandler: new Extension('onServerPreHandler', true),
       onServerPreRequest: new Extension('onServerPreRequest', true),
       onServerPreResponse: new Extension('onServerPreResponse', true)
-    }
+    };
 
     // start tracking process stats
-    this._heavy.start()
+    this._heavy.start();
 
     // will be executed before the client request is executed.
-    this._extensions.onClientPreRequest.addRange(DefaultExtensions.onClientPreRequest)
+    this._extensions.onClientPreRequest.addRange(DefaultExtensions.onClientPreRequest);
     // will be executed after the client received and decoded the request
-    this._extensions.onClientPostRequest.addRange(DefaultExtensions.onClientPostRequest)
+    this._extensions.onClientPostRequest.addRange(DefaultExtensions.onClientPostRequest);
     // will be executed before the server received the requests
-    this._extensions.onServerPreRequest.addRange(DefaultExtensions.onServerPreRequest)
+    this._extensions.onServerPreRequest.addRange(DefaultExtensions.onServerPreRequest);
     // will be executed before the server action is executed
-    this._extensions.onServerPreHandler.addRange(DefaultExtensions.onServerPreHandler)
+    this._extensions.onServerPreHandler.addRange(DefaultExtensions.onServerPreHandler);
     // will be executed before the server reply the response and build the message
-    this._extensions.onServerPreResponse.addRange(DefaultExtensions.onServerPreResponse)
+    this._extensions.onServerPreResponse.addRange(DefaultExtensions.onServerPreResponse);
 
     // use own logger
     if (this._config.logger) {
-      this.log = this._config.logger
+      this.log = this._config.logger;
     } else {
-      let pretty = Pino.pretty()
+      let pretty = Pino.pretty();
 
       // Leads to too much listeners in tests
       if (this._config.logLevel !== 'silent') {
-        pretty.pipe(process.stdout)
+        pretty.pipe(process.stdout);
       }
 
       this.log = Pino({
@@ -138,7 +138,7 @@ export default class MostlyCore extends EventEmitter {
         safe: true, // avoid error caused by circular references
         level: this._config.logLevel,
         serializers: Serializers
-      }, pretty)
+      }, pretty);
     }
 
     // no matter how a process exits log and fire event
@@ -146,41 +146,41 @@ export default class MostlyCore extends EventEmitter {
       this.log.fatal({
         code,
         signal
-      }, 'process exited')
+      }, 'process exited');
       this.emit('teardown', {
         code,
         signal
-      })
-      this.close()
-    })
+      });
+      this.close();
+    });
   }
 
   /**
    * Return all registered plugins
    */
   get plugins() {
-    return this._plugins
+    return this._plugins;
   }
 
   /**
    * Return the bloomrun instance
    */
   get router() {
-    return this._router
+    return this._router;
   }
 
   /**
    * Return the heavy instance
    */
   get load() {
-    return this._heavy.load
+    return this._heavy.load;
   }
 
   /**
    * Return the shared object of all exposed data
    */
   get exposition() {
-    return this._exposition
+    return this._exposition;
   }
 
   /**
@@ -188,13 +188,13 @@ export default class MostlyCore extends EventEmitter {
    * It is accessible by this.expositions[<plugin>][<key>]
    */
   expose(key, object) {
-    let pluginName = this.plugin$.attributes.name
+    let pluginName = this.plugin$.attributes.name;
 
     if (!this._exposition[pluginName]) {
-      this._exposition[pluginName] = {}
-      this._exposition[pluginName][key] = object
+      this._exposition[pluginName] = {};
+      this._exposition[pluginName][key] = object;
     } else {
-      this._exposition[pluginName][key] = object
+      this._exposition[pluginName][key] = object;
     }
   }
 
@@ -202,14 +202,14 @@ export default class MostlyCore extends EventEmitter {
    * Return the underlying NATS driver
    */
   get transport() {
-    return this._transport.driver
+    return this._transport.driver;
   }
 
   /**
    * Return all registered topics
    */
   get topics() {
-    return this._topics
+    return this._topics;
   }
 
   /**
@@ -219,12 +219,12 @@ export default class MostlyCore extends EventEmitter {
     if (!this._extensions[type]) {
       let error = new Errors.MostlyError(Constants.INVALID_EXTENSION_TYPE, {
         type
-      })
-      this.log.error(error)
-      throw(error)
+      });
+      this.log.error(error);
+      throw(error);
     }
 
-    this._extensions[type].add(handler)
+    this._extensions[type].add(handler);
   }
 
   /**
@@ -233,30 +233,33 @@ export default class MostlyCore extends EventEmitter {
   use(params, options) {
     // use plugin infos from package.json
     if (_.isObject(params.attributes.pkg)) {
-      params.attributes = params.attributes || {}
-      params.attributes = Object.assign(params.attributes, _.pick(params.attributes.pkg, ['name', 'description', 'version']))
+      params.attributes = params.attributes || {};
+      params.attributes = Object.assign(params.attributes,
+        _.pick(params.attributes.pkg, ['name', 'description', 'version']));
     }
 
     // pass options as second argument during plugin registration
     if (_.isObject(options)) {
-      params.options = params.options || {}
-      params.options = Object.assign(params.options, options)
+      params.options = params.options || {};
+      params.options = Object.assign(params.options, options);
     }
 
     // plugin name is required
     if (!params.attributes.name) {
-      let error = new Errors.MostlyError(Constants.PLUGIN_NAME_REQUIRED)
-      this.log.error(error)
-      throw(error)
+      let error = new Errors.MostlyError(Constants.PLUGIN_NAME_REQUIRED);
+      this.log.error(error);
+      throw(error);
     }
 
     // check if plugin is already registered
     if (this._plugins[params.attributes.name]) {
-      // check for `multiple` attribute that when set to true tells hemera that it is safe to register your plugin more than once
+      // check for `multiple` attribute that when set to true tells
+      // mostly that it is safe to register your plugin more than once
       if (params.attributes.multiple !== true) {
-        let error = new Errors.MostlyError(Constants.PLUGIN_ALREADY_REGISTERED, params.attributes.name)
-        this.log.error(error)
-        throw(error)
+        let error = new Errors.MostlyError(
+          Constants.PLUGIN_ALREADY_REGISTERED, params.attributes.name);
+        this.log.error(error);
+        throw(error);
       }
     }
 
@@ -264,25 +267,25 @@ export default class MostlyCore extends EventEmitter {
     if (params.attributes.dependencies) {
       params.attributes.dependencies.forEach((dep) => {
         if (!this._plugins[dep]) {
-          this.log.error(Constants.PLUGIN_DEPENDENCY_MISSING, params.attributes.name, dep, dep)
-          throw new Errors.MostlyError(Constants.PLUGIN_DEPENDENCY_NOT_FOUND)
+          this.log.error(Constants.PLUGIN_DEPENDENCY_MISSING, params.attributes.name, dep, dep);
+          throw new Errors.MostlyError(Constants.PLUGIN_DEPENDENCY_NOT_FOUND);
         }
-      })
+      });
     }
 
     // create new execution context
-    let ctx = this.createContext()
-    ctx.plugin$ = {}
-    ctx.plugin$.register = params.plugin.bind(ctx)
-    ctx.plugin$.attributes = params.attributes || {}
-    ctx.plugin$.attributes.dependencies = params.attributes.dependencies || []
-    ctx.plugin$.parentPlugin = this.plugin$.attributes.name
-    ctx.plugin$.options = params.options || {}
+    let ctx = this.createContext();
+    ctx.plugin$ = {};
+    ctx.plugin$.register = params.plugin.bind(ctx);
+    ctx.plugin$.attributes = params.attributes || {};
+    ctx.plugin$.attributes.dependencies = params.attributes.dependencies || [];
+    ctx.plugin$.parentPlugin = this.plugin$.attributes.name;
+    ctx.plugin$.options = params.options || {};
 
-    this._pluginRegistrations.push(ctx.plugin$)
+    this._pluginRegistrations.push(ctx.plugin$);
 
-    this.log.info(params.attributes.name, Constants.PLUGIN_ADDED)
-    this._plugins[params.attributes.name] = ctx.plugin$
+    this.log.info(params.attributes.name, Constants.PLUGIN_ADDED);
+    this._plugins[params.attributes.name] = ctx.plugin$;
   }
 
   /**
@@ -290,34 +293,34 @@ export default class MostlyCore extends EventEmitter {
    * e.g to set the payload validator
    */
   setOption(key, value) {
-    this.plugin$.options[key] = value
+    this.plugin$.options[key] = value;
   }
 
   /**
    * Change the base configuration.
    */
   setConfig(key, value) {
-    this._config[key] = value
+    this._config[key] = value;
   }
 
   get config() {
-    return this._config
+    return this._config;
   }
 
   /**
    * Exit the process
    */
   fatal() {
-    this.close()
+    this.close();
 
-    process.exit(1)
+    process.exit(1);
   }
 
   /**
-   * Create a custom super error object without to start hemera
+   * Create a custom super error object without to start mostly
    */
   static createError(name) {
-    return SuperError.subclass(name)
+    return SuperError.subclass(name);
   }
 
   /**
@@ -326,28 +329,28 @@ export default class MostlyCore extends EventEmitter {
    */
   decorate(prop, value) {
     if (this._decorations[prop]) {
-      throw new Error(Constants.DECORATION_ALREADY_DEFINED)
+      throw new Error(Constants.DECORATION_ALREADY_DEFINED);
     } else if (this[prop]) {
-      throw new Error(Constants.OVERRIDE_BUILTIN_METHOD_NOT_ALLOWED)
+      throw new Error(Constants.OVERRIDE_BUILTIN_METHOD_NOT_ALLOWED);
     }
 
-    this._decorations[prop] = { plugin: this.plugin$, value }
-    // decorate root hemera instance
-    this._root[prop] = value
+    this._decorations[prop] = { plugin: this.plugin$, value };
+    // decorate root mostly instance
+    this._root[prop] = value;
   }
 
   /**
-   * Create a custom super error object in a running hemera instance
+   * Create a custom super error object in a running mostly instance
    */
   createError(name) {
-    return SuperError.subclass(name)
+    return SuperError.subclass(name);
   }
 
   /**
-   * Return all hemera errors
+   * Return all mostly errors
    */
   static get errors() {
-    return Errors
+    return Errors;
   }
 
   /**
@@ -355,34 +358,34 @@ export default class MostlyCore extends EventEmitter {
    */
   ready(cb) {
     this._transport.driver.on('connect', () => {
-      this.log.info(Constants.TRANSPORT_CONNECTED)
+      this.log.info(Constants.TRANSPORT_CONNECTED);
 
       const each = (item, next) => {
         if (item.register.length < 2) {
-          item.register(item.options)
-          return next()
+          item.register(item.options);
+          return next();
         }
-        item.register(item.options, next)
-      }
+        item.register(item.options, next);
+      };
 
       Util.serial(this._pluginRegistrations, each, (err) => {
         if (err) {
-          let error = new Errors.MostlyError(Constants.PLUGIN_REGISTRATION_ERROR)
-          this.log.error(error)
-          throw(error)
+          let error = new Errors.MostlyError(Constants.PLUGIN_REGISTRATION_ERROR);
+          this.log.error(error);
+          throw(error);
         }
         if (_.isFunction(cb)) {
-          cb.call(this)
+          cb.call(this);
         }
-      })
-    })
+      });
+    });
   }
 
   /**
    * Build the final payload for the response
    */
   _buildMessage() {
-    let result = this._response
+    let result = this._response;
 
     let message = {
       meta: this.meta$ || {},
@@ -390,22 +393,22 @@ export default class MostlyCore extends EventEmitter {
       request: this.request$,
       result: result.error ? null : result.payload,
       error: result.error ? Errio.toObject(result.error) : null
-    }
+    };
 
-    let endTime = Util.nowHrTime()
-    message.request.duration = endTime - message.request.timestamp
-    message.trace.duration = endTime - message.request.timestamp
+    let endTime = Util.nowHrTime();
+    message.request.duration = endTime - message.request.timestamp;
+    message.trace.duration = endTime - message.request.timestamp;
 
-    let m = this._encoder.encode.call(this, message)
+    let m = this._encoder.encode.call(this, message);
 
     // attach encoding issues
     if (m.error) {
-      message.error = Errio.toObject(m.error)
-      message.result = null
+      message.error = Errio.toObject(m.error);
+      message.result = null;
     }
 
     // final response
-    this._message = m.value
+    this._message = m.value;
   }
 
   /**
@@ -414,31 +417,33 @@ export default class MostlyCore extends EventEmitter {
    */
   finish() {
     function onServerPreResponseHandler(err, value) {
-      const self = this
+      const self = this;
 
       // check if an error was already wrapped
       if (self._response.error) {
-        self.emit('serverResponseError', self._response.error)
-        self.log.error(self._response.error)
+        self.emit('serverResponseError', self._response.error);
+        self.log.error(self._response.error);
       } else if (err) { // check for an extension error
         if (err instanceof SuperError) {
           // try to get rootCause then cause and last the thrown error
-          self._response.error = new Errors.MostlyError(Constants.EXTENSION_ERROR).causedBy(err.rootCause || err.cause || err)
+          self._response.error = new Errors.MostlyError(
+            Constants.EXTENSION_ERROR).causedBy(err.rootCause || err.cause || err);
         } else {
-          self._response.error = new Errors.MostlyError(Constants.EXTENSION_ERROR).causedBy(err)
+          self._response.error = new Errors.MostlyError(
+            Constants.EXTENSION_ERROR).causedBy(err);
         }
 
-        self.emit('serverResponseError', self._response.error)
-        self.log.error(self._response.error)
+        self.emit('serverResponseError', self._response.error);
+        self.log.error(self._response.error);
       }
 
       // reply value from extension
       if (value) {
-        self._response.payload = value
+        self._response.payload = value;
       }
 
       // create message payload
-      self._buildMessage()
+      self._buildMessage();
 
       // indicates that an error occurs and that the program should exit
       if (self._shouldCrash) {
@@ -448,21 +453,21 @@ export default class MostlyCore extends EventEmitter {
           return self._transport.send(self._replyTo, self._message, () => {
             // let it crash
             if (self._config.crashOnFatal) {
-              self.fatal()
+              self.fatal();
             }
-          })
+          });
         } else if (self._config.crashOnFatal) {
-          return self.fatal()
+          return self.fatal();
         }
       }
 
       // reply only when we have an inbox
       if (self._replyTo) {
-        return this._transport.send(this._replyTo, self._message)
+        return this._transport.send(this._replyTo, self._message);
       }
     }
 
-    this._extensions.onServerPreResponse.invoke(this, onServerPreResponseHandler)
+    this._extensions.onServerPreResponse.invoke(this, onServerPreResponseHandler);
   }
 
   /**
@@ -470,12 +475,12 @@ export default class MostlyCore extends EventEmitter {
    * With subToMany and maxMessages you control NATS specific behaviour.
    */
   subscribe(topic, subToMany, maxMessages) {
-    const self = this
+    const self = this;
 
     // avoid duplicate subscribers of the emit stream
     // we use one subscriber per topic
     if (self._topics[topic]) {
-      return
+      return;
     }
 
     /**
@@ -486,7 +491,7 @@ export default class MostlyCore extends EventEmitter {
      * @returns
      */
     function actionHandler(err, resp) {
-      const self = this
+      const self = this;
 
       if (err) {
         debug('actionHandler:error', err);
@@ -515,141 +520,147 @@ export default class MostlyCore extends EventEmitter {
     }
 
     function onServerPreHandler(err, value) {
-      const self = this
+      const self = this;
 
       if (err) {
         if (err instanceof SuperError) {
           // try to get rootCause then cause and last the thrown error
-          self._response.error = new Errors.MostlyError(Constants.EXTENSION_ERROR).causedBy(err.rootCause || err.cause || err)
+          self._response.error = new Errors.MostlyError(
+            Constants.EXTENSION_ERROR).causedBy(err.rootCause || err.cause || err);
         } else {
-          self._response.error = new Errors.MostlyError(Constants.EXTENSION_ERROR).causedBy(err)
+          self._response.error = new Errors.MostlyError(
+            Constants.EXTENSION_ERROR).causedBy(err);
         }
 
-        self.log.error(self._response.error)
+        self.log.error(self._response.error);
 
-        return self.finish()
+        return self.finish();
       }
 
       // reply value from extension
       if (value) {
-        self._response.payload = value
-        return self.finish()
+        self._response.payload = value;
+        return self.finish();
       }
 
       try {
-        let action = self._actMeta.action.bind(self)
+        let action = self._actMeta.action.bind(self);
 
         // execute add middlewares
         Util.serial(self._actMeta.middleware, (item, next) => {
-          item(self._request, self._response, next)
+          item(self._request, self._response, next);
         }, (err) => {
           // middleware error
           if (err) {
             if (err instanceof SuperError) {
               // try to get rootCause then cause and last the thrown error
-              self._response.error = new Errors.MostlyError(Constants.ADD_MIDDLEWARE_ERROR).causedBy(err.rootCause || err.cause || err)
+              self._response.error = new Errors.MostlyError(
+                Constants.ADD_MIDDLEWARE_ERROR).causedBy(err.rootCause || err.cause || err);
             } else {
-              self._response.error = new Errors.MostlyError(Constants.ADD_MIDDLEWARE_ERROR).causedBy(err)
+              self._response.error = new Errors.MostlyError(
+                Constants.ADD_MIDDLEWARE_ERROR).causedBy(err);
             }
-            self.log.error(self._response.error)
-            return self.finish()
+            self.log.error(self._response.error);
+            return self.finish();
           }
 
           // if request type is 'pubsub' we dont have to reply back
           if (self._request.payload.request.type === 'pubsub') {
-            action(self._request.payload.pattern)
-            return self.finish()
+            action(self._request.payload.pattern);
+            return self.finish();
           }
 
           // execute RPC action
-          action(self._request.payload.pattern, actionHandler.bind(self))
-        })
+          action(self._request.payload.pattern, actionHandler.bind(self));
+        });
       } catch(err) {
         // try to get rootCause then cause and last the thrown error
         if (err instanceof SuperError) {
           self._response.error = new Errors.ImplementationError(Constants.IMPLEMENTATION_ERROR, {
             pattern: self._pattern
-          }).causedBy(err.rootCause || err.cause || err)
+          }).causedBy(err.rootCause || err.cause || err);
         } else {
           self._response.error = new Errors.ImplementationError(Constants.IMPLEMENTATION_ERROR, {
             pattern: self._pattern
-          }).causedBy(err)
+          }).causedBy(err);
         }
 
         // service should exit
-        self._shouldCrash = true
+        self._shouldCrash = true;
 
-        self.finish()
+        self.finish();
       }
     }
 
     function onServerPreRequestHandler(err, value) {
-      let self = this
+      let self = this;
 
       if (err) {
         if (err instanceof SuperError) {
           // try to get rootCause then cause and last the thrown error
-          self._response.error = new Errors.MostlyError(Constants.EXTENSION_ERROR).causedBy(err.rootCause || err.cause || err)
+          self._response.error = new Errors.MostlyError(
+            Constants.EXTENSION_ERROR).causedBy(err.rootCause || err.cause || err);
         } else {
-          self._response.error = new Errors.MostlyError(Constants.EXTENSION_ERROR).causedBy(err)
+          self._response.error = new Errors.MostlyError(
+            Constants.EXTENSION_ERROR).causedBy(err);
         }
 
-        return self.finish()
+        return self.finish();
       }
 
       // reply value from extension
       if (value) {
-        self._response.payload = value
-        return self.finish()
+        self._response.payload = value;
+        return self.finish();
       }
 
       // find matched route
-      self._pattern = self._request.payload.pattern
-      self._actMeta = self._router.lookup(self._pattern)
+      self._pattern = self._request.payload.pattern;
+      self._actMeta = self._router.lookup(self._pattern);
 
       // check if a handler is registered with this pattern
       if (self._actMeta) {
-        self._extensions.onServerPreHandler.invoke(self, onServerPreHandler)
+        self._extensions.onServerPreHandler.invoke(self, onServerPreHandler);
       } else {
         self.log.info({
           topic: self._topic
-        }, Constants.PATTERN_NOT_FOUND)
+        }, Constants.PATTERN_NOT_FOUND);
 
         self._response.error = new Errors.PatternNotFound(Constants.PATTERN_NOT_FOUND, {
           pattern: self._pattern
-        })
+        });
 
         // send error back to callee
-        self.finish()
+        self.finish();
       }
     }
 
     let handler = (request, replyTo) => {
       // create new execution context
-      let ctx = this.createContext()
-      ctx._shouldCrash = false
-      ctx._replyTo = replyTo
-      ctx._topic = topic
-      ctx._request = new ServerRequest(request)
-      ctx._response = new ServerResponse()
-      ctx._pattern = {}
-      ctx._actMeta = {}
-      ctx._isServer = true
+      let ctx = this.createContext();
+      ctx._shouldCrash = false;
+      ctx._replyTo = replyTo;
+      ctx._topic = topic;
+      ctx._request = new ServerRequest(request);
+      ctx._response = new ServerResponse();
+      ctx._pattern = {};
+      ctx._actMeta = {};
+      ctx._isServer = true;
 
-      ctx._extensions.onServerPreRequest.invoke(ctx, onServerPreRequestHandler)
-    }
+      ctx._extensions.onServerPreRequest.invoke(ctx, onServerPreRequestHandler);
+    };
 
     // standard pubsub with optional max proceed messages
     if (subToMany) {
       self._topics[topic] = self._transport.subscribe(topic, {
         max: maxMessages
-      }, handler)
+      }, handler);
     } else {
       // queue group names allow load balancing of services
       self._topics[topic] = self._transport.subscribe(topic, {
         'queue': 'queue.' + topic,
         max: maxMessages
-      }, handler)
+      }, handler);
     }
   }
 
@@ -657,16 +668,16 @@ export default class MostlyCore extends EventEmitter {
    * Unsubscribe a topic from NATS
    */
   remove(topic, maxMessages) {
-    const self = this
-    const subId = self._topics[topic]
+    const self = this;
+    const subId = self._topics[topic];
     if (subId) {
-      self._transport.unsubscribe(subId, maxMessages)
+      self._transport.unsubscribe(subId, maxMessages);
       // release topic
-      delete self._topics[topic]
-      return true
+      delete self._topics[topic];
+      return true;
     }
 
-    return false
+    return false;
   }
 
   /**
@@ -675,22 +686,22 @@ export default class MostlyCore extends EventEmitter {
   add(pattern, cb) {
     // check for use quick syntax for JSON objects
     if (_.isString(pattern)) {
-      pattern = TinySonic(pattern)
+      pattern = TinySonic(pattern);
     }
 
     // topic is needed to subscribe on a subject in NATS
     if (!pattern.topic) {
       let error = new Errors.MostlyError(Constants.NO_TOPIC_TO_SUBSCRIBE, {
         pattern
-      })
+      });
 
-      this.log.error(error)
-      throw(error)
+      this.log.error(error);
+      throw(error);
     }
 
-    let origPattern = _.cloneDeep(pattern)
-    let schema = Util.extractSchema(origPattern)
-    origPattern = Util.cleanPattern(origPattern)
+    let origPattern = _.cloneDeep(pattern);
+    let schema = Util.extractSchema(origPattern);
+    origPattern = Util.cleanPattern(origPattern);
 
     // create message object which represent the object behind the matched pattern
     let actMeta = new Add({
@@ -698,29 +709,29 @@ export default class MostlyCore extends EventEmitter {
       pattern: origPattern,
       action: cb,
       plugin: this.plugin$
-    })
+    });
 
-    let handler = this._router.lookup(origPattern)
+    let handler = this._router.lookup(origPattern);
 
     // check if pattern is already registered
     if (handler) {
       let error = new Errors.MostlyError(Constants.PATTERN_ALREADY_IN_USE, {
         pattern
-      })
+      });
 
-      this.log.error(error)
-      throw(error)
+      this.log.error(error);
+      throw(error);
     }
 
     // add to bloomrun
-    this._router.add(origPattern, actMeta)
+    this._router.add(origPattern, actMeta);
 
-    this.log.info(origPattern, Constants.ADD_ADDED)
+    this.log.info(origPattern, Constants.ADD_ADDED);
 
     // subscribe on topic
-    this.subscribe(pattern.topic, pattern.pubsub$, pattern.maxMessages$)
+    this.subscribe(pattern.topic, pattern.pubsub$, pattern.maxMessages$);
 
-    return actMeta
+    return actMeta;
   }
 
   /**
@@ -729,149 +740,150 @@ export default class MostlyCore extends EventEmitter {
   act(pattern, cb) {
     // check for use quick syntax for JSON objects
     if (_.isString(pattern)) {
-      pattern = TinySonic(pattern)
+      pattern = TinySonic(pattern);
     }
 
     // topic is needed to subscribe on a subject in NATS
     if (!pattern.topic) {
       let error = new Errors.MostlyError(Constants.NO_TOPIC_TO_REQUEST, {
         pattern
-      })
+      });
 
-      this.log.error(error)
-      throw(error)
+      this.log.error(error);
+      throw(error);
     }
 
     function onClientPostRequestHandler(err) {
-      const self = this
+      const self = this;
       if (err) {
-        let error = new Errors.MostlyError(Constants.EXTENSION_ERROR).causedBy(err)
-        self.emit('clientResponseError', error)
-        self.log.error(error)
+        let error = new Errors.MostlyError(Constants.EXTENSION_ERROR).causedBy(err);
+        self.emit('clientResponseError', error);
+        self.log.error(error);
 
         if (self._actCallback) {
-          return self._actCallback(error)
+          return self._actCallback(error);
         }
 
-        return
+        return;
       }
 
       if (self._actCallback) {
         if (self._response.payload.error) {
           debug('act:response.payload.error', self._response.payload.error);
-          let responseError = Errio.fromObject(self._response.payload.error)
-          let responseErrorCause = responseError.cause
+          let responseError = Errio.fromObject(self._response.payload.error);
+          let responseErrorCause = responseError.cause;
           let error = new Errors.BusinessError(Constants.BUSINESS_ERROR, {
             pattern: self._cleanPattern
-          }).causedBy(responseErrorCause ? responseError.cause : responseError)
-          self.emit('clientResponseError', error)
-          self.log.error(error)
+          }).causedBy(responseErrorCause ? responseError.cause : responseError);
+          self.emit('clientResponseError', error);
+          self.log.error(error);
 
-          return self._actCallback(responseError)
+          return self._actCallback(responseError);
         }
 
-        self._actCallback(null, self._response.payload.result)
+        self._actCallback(null, self._response.payload.result);
       }
     }
 
     function sendRequestHandler(response) {
-      const self = this
-      const res = self._decoder.decode.call(self, response)
-      self._response.payload = res.value
-      self._response.error = res.error
+      const self = this;
+      const res = self._decoder.decode.call(self, response);
+      self._response.payload = res.value;
+      self._response.error = res.error;
 
       try {
         // if payload is invalid
         if (self._response.error) {
           let error = new Errors.ParseError(Constants.PAYLOAD_PARSING_ERROR, {
             pattern: self._cleanPattern
-          }).causedBy(self._response.error)
-          self.emit('clientResponseError', error)
-          self.log.error(error)
+          }).causedBy(self._response.error);
+          self.emit('clientResponseError', error);
+          self.log.error(error);
 
           if (self._actCallback) {
-            return self._actCallback(error)
+            return self._actCallback(error);
           }
         }
 
-        self._extensions.onClientPostRequest.invoke(self, onClientPostRequestHandler)
+        self._extensions.onClientPostRequest.invoke(self, onClientPostRequestHandler);
       } catch(err) {
         let error = new Errors.FatalError(Constants.FATAL_ERROR, {
           pattern: self._cleanPattern
-        }).causedBy(err)
-        self.emit('clientResponseError', error)
-        self.log.fatal(error)
+        }).causedBy(err);
+        self.emit('clientResponseError', error);
+        self.log.fatal(error);
 
         // let it crash
         if (self._config.crashOnFatal) {
-          self.fatal()
+          self.fatal();
         }
       }
     }
 
     function onPreRequestHandler(err) {
-      const self = this
+      const self = this;
 
-      let m = self._encoder.encode.call(self, self._message)
+      let m = self._encoder.encode.call(self, self._message);
 
       // throw encoding issue
       if (m.error) {
-        let error = new Errors.MostlyError(Constants.EXTENSION_ERROR).causedBy(m.error)
-        self.emit('clientResponseError', error)
-        self.log.error(error)
+        let error = new Errors.MostlyError(Constants.EXTENSION_ERROR).causedBy(m.error);
+        self.emit('clientResponseError', error);
+        self.log.error(error);
 
         if (self._actCallback) {
-          return self._actCallback(error)
+          return self._actCallback(error);
         }
 
-        return
+        return;
       }
 
       if (err) {
-        let error = new Errors.MostlyError(Constants.EXTENSION_ERROR).causedBy(err)
-        self.emit('clientResponseError', error)
-        self.log.error(error)
+        let error = new Errors.MostlyError(Constants.EXTENSION_ERROR).causedBy(err);
+        self.emit('clientResponseError', error);
+        self.log.error(error);
 
         if (self._actCallback) {
-          return self._actCallback(error)
+          return self._actCallback(error);
         }
 
-        return
+        return;
       }
 
-      self._request.payload = m.value
-      self._request.error = m.error
+      self._request.payload = m.value;
+      self._request.error = m.error;
 
       // use simple publish mechanism instead of request/reply
       if (pattern.pubsub$ === true) {
         if (self._actCallback) {
-          self.log.info(Constants.PUB_CALLBACK_REDUNDANT)
+          self.log.info(Constants.PUB_CALLBACK_REDUNDANT);
         }
 
-        self._transport.send(pattern.topic, self._request.payload)
+        self._transport.send(pattern.topic, self._request.payload);
       } else {
-        const optOptions = {}
+        const optOptions = {};
         // limit on the number of responses the requestor may receive
-        optOptions.max = ctx._pattern.maxMessages$ || 1
+        optOptions.max = ctx._pattern.maxMessages$ || 1;
         // send request
-        let sid = self._transport.sendRequest(pattern.topic, self._request.payload, optOptions, sendRequestHandler.bind(self))
+        let sid = self._transport.sendRequest(pattern.topic,
+          self._request.payload, optOptions, sendRequestHandler.bind(self));
 
         // handle timeout
-        self.handleTimeout(sid, pattern)
+        self.handleTimeout(sid, pattern);
       }
     }
 
     // create new execution context
-    let ctx = this.createContext()
-    ctx._pattern = pattern
-    ctx._prevContext = this
-    ctx._actCallback = _.isFunction(cb) ? cb.bind(ctx) : null
-    ctx._cleanPattern = Util.cleanFromSpecialVars(pattern)
-    ctx._response = new ClientResponse()
-    ctx._request = new ClientRequest()
-    ctx._isServer = false
+    let ctx = this.createContext();
+    ctx._pattern = pattern;
+    ctx._prevContext = this;
+    ctx._actCallback = _.isFunction(cb) ? cb.bind(ctx) : null;
+    ctx._cleanPattern = Util.cleanFromSpecialVars(pattern);
+    ctx._response = new ClientResponse();
+    ctx._request = new ClientRequest();
+    ctx._isServer = false;
 
-    ctx._extensions.onClientPreRequest.invoke(ctx, onPreRequestHandler)
+    ctx._extensions.onClientPreRequest.invoke(ctx, onPreRequestHandler);
   }
 
   /**
@@ -881,30 +893,30 @@ export default class MostlyCore extends EventEmitter {
    * - Service was processing the request but crashed (service error)
    */
   handleTimeout(sid, pattern) {
-    const timeout = pattern.timeout$ || this._config.timeout
+    const timeout = pattern.timeout$ || this._config.timeout;
 
     function onClientPostRequestHandler(err) {
-      const self = this
+      const self = this;
       if (err) {
-        let error = new Errors.MostlyError(Constants.EXTENSION_ERROR).causedBy(err)
-        self.emit('clientResponseError', error)
-        self._response.error = error
-        self.log.error(self._response.error)
+        let error = new Errors.MostlyError(Constants.EXTENSION_ERROR).causedBy(err);
+        self.emit('clientResponseError', error);
+        self._response.error = error;
+        self.log.error(self._response.error);
       }
 
       if (self._actCallback) {
         try {
-          self._actCallback(self._response.error)
+          self._actCallback(self._response.error);
         } catch(err) {
           let error = new Errors.FatalError(Constants.FATAL_ERROR, {
             pattern
-          }).causedBy(err)
-          self.emit('clientResponseError', error)
-          self.log.fatal(error)
+          }).causedBy(err);
+          self.emit('clientResponseError', error);
+          self.log.fatal(error);
 
           // let it crash
           if (self._config.crashOnFatal) {
-            self.fatal()
+            self.fatal();
           }
         }
       }
@@ -913,41 +925,41 @@ export default class MostlyCore extends EventEmitter {
     let timeoutHandler = () => {
       let error = new Errors.TimeoutError(Constants.ACT_TIMEOUT_ERROR, {
         pattern
-      })
-      this.emit('clientResponseError', error)
-      this.log.error(error)
-      this._response.error = error
-      this._extensions.onClientPostRequest.invoke(this, onClientPostRequestHandler)
-    }
+      });
+      this.emit('clientResponseError', error);
+      this.log.error(error);
+      this._response.error = error;
+      this._extensions.onClientPostRequest.invoke(this, onClientPostRequestHandler);
+    };
 
-    this._transport.timeout(sid, timeout, 1, timeoutHandler)
+    this._transport.timeout(sid, timeout, 1, timeoutHandler);
   }
 
   /**
-   * Create new instance of hemera but with pointer on the previous propertys
+   * Create new instance of mostly but with pointer on the previous propertys
    * so we are able to create a scope per act without lossing the reference to the core api.
    */
   createContext() {
-    const self = this
+    const self = this;
 
-    const ctx = Object.create(self)
+    const ctx = Object.create(self);
 
-    return ctx
+    return ctx;
   }
 
   /**
    * Return the list of all registered actions
    */
   list(pattern, options) {
-    return this._router.list(pattern, options)
+    return this._router.list(pattern, options);
   }
 
   /**
    * Close the process watcher and the underlying transort driver.
    */
   close() {
-    this._heavy.stop()
+    this._heavy.stop();
 
-    return this._transport.close()
+    return this._transport.close();
   }
 }

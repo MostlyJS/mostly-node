@@ -6,11 +6,9 @@ export default class Encoder {
     try {
       return {
         value: SafeStringify(msg)
-      }
+      };
     } catch (error) {
-      return {
-        error
-      }
+      return { error };
     }
   }
 }
