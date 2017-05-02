@@ -10,8 +10,8 @@ MostlyJS is targeting breaking current Monolith API application into small servi
 It provides well integration with existing node frameworks so that you can change a few code to change your RESTfull api into microservices.
 
 * [Express](http://www.expressjs.com) with [express-gateway](https://github.com/MostlyJS/mostly-demos)
-* [Feathers](https://feathersjs.com/) with [mostly-feathers](http://https://github.com/MostlyJS/mostly-feathers) and [mostly-feathers-rest](http://https://github.com/MostlyJS/mostly-feathers-rest)
-* [Poplarjs](https://github.com/poplarjs/poplar) with [mostly-poplarjs](http://https://github.com/MostlyJS/mostly-poplarjs) and [mostly-poplarjs-rest](http://https://github.com/MostlyJS/mostly-poplarjs-rest)
+* [Feathers](https://feathersjs.com/) with [mostly-feathers](https://https://github.com/MostlyJS/mostly-feathers) and [mostly-feathers-rest](https://github.com/MostlyJS/mostly-feathers-rest)
+* [Poplarjs](https://github.com/poplarjs/poplar) with [mostly-poplarjs](https://github.com/MostlyJS/mostly-poplarjs) and [mostly-poplarjs-rest](https://github.com/MostlyJS/mostly-poplarjs-rest)
 
 Integration with Koa and Hapi is also planned.
 
