@@ -7,7 +7,7 @@ MostlyJS is a toolkit to develop distributed microservices in a mostly simple wa
 
 MostlyJS is targeting breaking current Monolith API application into small services that running on the network transparent to you without knowing where the service physical located.
 
-It provides well integration with existing node frameworks so that you can change a few code to change your RESTfull api into microservices.
+It provides well integration with existing node frameworks so that you can change a few code to convert your RESTfull api into microservices.
 
 * [Express](http://www.expressjs.com) with [express-gateway](https://github.com/MostlyJS/mostly-demos)
 * [Feathers](https://feathersjs.com/) with [mostly-feathers](https://github.com/MostlyJS/mostly-feathers) and [mostly-feathers-rest](https://github.com/MostlyJS/mostly-feathers-rest)
