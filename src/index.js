@@ -382,6 +382,18 @@ export default class MostlyCore extends EventEmitter {
   }
 
   /**
+   * Ready callback when Nats connected
+   */
+  onError(cb) {
+    this._transport.driver.on('error', (e) => {
+      this.log.info(Constants.TRANSPORT_ERROR);
+      if (_.isFunction(cb)) {
+        cb.call(this, e);
+      }
+    });
+  }
+
+  /**
    * Build the final payload for the response
    */
   _buildMessage() {

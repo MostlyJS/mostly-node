@@ -12,6 +12,7 @@ module.exports = {
   ADD_MIDDLEWARE_ERROR: 'Middleware error',
   PLUGIN_ALREADY_REGISTERED: 'Plugin was already registered',
   TRANSPORT_CONNECTED: 'Connected!',
+  TRANSPORT_ERROR: 'Connect error!',
   PLUGIN_ADDED: 'PLUGIN - ADDED!',
   PAYLOAD_VALIDATION_ERROR: 'Invalid payload',
   ADD_ADDED: 'ADD - ADDED',
