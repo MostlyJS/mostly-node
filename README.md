@@ -27,7 +27,7 @@ npm install mostly-node
 
 #### 2. Install and Run NATS Server
 
-https://nats.io/documentation/tutorials/gnatsd-install
+[https://nats.io/documentation/tutorials/gnatsd-install](https://nats.io/documentation/tutorials/gnatsd-install)
 
 ## Quick Example
 
