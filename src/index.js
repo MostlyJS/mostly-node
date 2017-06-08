@@ -39,10 +39,12 @@ const defaultConfig = {
 
 export default class MostlyCore extends EventEmitter {
 
-  constructor(transport, params) {
+  constructor(transport, options) {
     super();
 
-    this._config = Object.assign(defaultConfig, params || {});
+    options = options || {};
+    if (options.name) options.name = options.name + '-' + Util.randomId();
+    this._config = Object.assign(defaultConfig, options);
     this._router = Bloomrun();
     this._heavy = new Heavy(this._config.load);
     this._transport = new NatsTransport({
