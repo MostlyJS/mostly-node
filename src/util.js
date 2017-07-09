@@ -84,7 +84,7 @@ export default class Util {
     args = args || {};
     let sb = [];
     _.each(args, function (v, k) {
-      if (!~k.indexOf('$') && !_.isFunction(v)) {
+      if (!~k.indexOf('$') && !_.isFunction(v) && typeof(v) !== 'object') {
         sb.push(k + ':' + v);
       }
     });
