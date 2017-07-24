@@ -6,15 +6,15 @@ const eslint = require('gulp-eslint');
 
 gulp.task('lint', function() {
   return gulp.src('src/**/*.js')
-    .pipe(changed('lib'))
+    // .pipe(changed('lib'))
     .pipe(eslint())
     .pipe(eslint.format())
     .pipe(eslint.failAfterError())
 });
 
-gulp.task('compile', () => {
+gulp.task('compile', ['lint'], () => {
   return gulp.src('src/**/*.js')
-    .pipe(changed('lib'))
+    // .pipe(changed('lib'))
     .pipe(sourcemaps.init())
     .pipe(babel())
     .pipe(sourcemaps.write('.'))
@@ -25,4 +25,4 @@ gulp.task('watch', () => {
   gulp.watch('src/**/*.js', ['lint', 'compile']);
 });
 
-gulp.task('default', ['watch', 'lint', 'compile']);
+gulp.task('default', ['watch']);
