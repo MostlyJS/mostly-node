@@ -98,32 +98,46 @@ module.exports.onClientPostRequest = [function onClientPostRequest (next) {
   next();
 }];
 
-module.exports.onServerPreRequest = [function onServerPreRequest (req, res, next) {
-  let ctx = this;
+module.exports.onServerPreRequest = [
+  function onServerPreRequest (req, res, next) {
+    let ctx = this;
 
-  let m = ctx._decoder.decode.call(ctx, ctx._request.payload);
+    let m = ctx._decoder.decode.call(ctx, ctx._request.payload);
 
-  if (m.error) {
-    return res.send(m.error);
+    if (m.error) {
+      return res.send(m.error);
+    }
+
+    let msg = m.value;
+
+    if (msg) {
+      ctx.meta$ = msg.meta || {};
+      ctx.trace$ = msg.trace || {};
+      ctx.delegate$ = msg.delegate || {};
+      ctx.request$ = msg.request || {};
+      ctx.auth$ = {};
+    }
+
+    ctx._request.payload = m.value;
+    ctx._request.error = m.error;
+
+    ctx.emit('serverPreRequest');
+
+    next();
+  },
+  function onServerPreRequestLoadTest (req, res, next) {
+    let ctx = this;
+
+    if (ctx._config.load.checkPolicy) {
+      const error = this._loadPolicy.check();
+      if (error) {
+        return next(new Errors.ProcessLoadError(error.message, error.details, ctx._heavy.load));
+      }
+    }
+
+    next();
   }
-
-  let msg = m.value;
-
-  if (msg) {
-    ctx.meta$ = msg.meta || {};
-    ctx.trace$ = msg.trace || {};
-    ctx.delegate$ = msg.delegate || {};
-    ctx.request$ = msg.request || {};
-    ctx.auth$ = {};
-  }
-
-  ctx._request.payload = m.value;
-  ctx._request.error = m.error;
-
-  ctx.emit('serverPreRequest');
-
-  next();
-}];
+];
 
 module.exports.onServerPreHandler = [function onServerPreHandler (req, res, next) {
   let ctx = this;
