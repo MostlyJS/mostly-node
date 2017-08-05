@@ -6,11 +6,11 @@ module.exports = {
   REQUEST_TYPE_PUBSUB: 'pubsub',
   REQUEST_TYPE_REQUEST: 'request',
   // Errors messages
-  TRANSPORT_CONNECTED: 'NATS connected!',
-  TRANSPORT_CONN_RECONNECTING: 'NATS reconnecting ...',
-  TRANSPORT_CONN_RECONNECTED: 'NATS reconnected!',
   TRANSPORT_ERROR: 'Could not connect to NATS!',
-  TRANSPORT_CONN_CLOSED: 'NATS connection closed!',
+  TRANSPORT_CLOSED: 'NATS connection closed!',
+  TRANSPORT_CONNECTED: 'NATS connected!',
+  TRANSPORT_RECONNECTING: 'NATS reconnecting ...',
+  TRANSPORT_RECONNECTED: 'NATS reconnected!',
 
   JSON_PARSE_ERROR: 'Invalid JSON payload',
   ACT_TIMEOUT_ERROR: 'Timeout',
