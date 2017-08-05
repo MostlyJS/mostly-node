@@ -7,7 +7,7 @@ import Pino from 'pino';
 import OnExit from 'signal-exit';
 import TinySonic from 'tinysonic';
 import SuperError from 'super-error';
-import co from 'co';
+import Co from 'co';
 import makeDebug from 'debug';
 
 import Errors from './errors';
@@ -734,7 +734,9 @@ export default class MostlyCore extends EventEmitter {
     }, { generators: this._config.generators });
 
     // set callback
-    actMeta.action = cb;
+    if (cb) { // cb is null when use chaining syntax
+      actMeta.action = cb;
+    }
 
     let handler = this._router.lookup(origPattern);
 
@@ -904,7 +906,7 @@ export default class MostlyCore extends EventEmitter {
 
     if (cb) {
       if (this._config.generators) {
-        ctx._actCallback = co.wrap(cb.bind(ctx));
+        ctx._actCallback = Co.wrap(cb.bind(ctx));
       } else {
         ctx._actCallback = cb.bind(ctx);
       }

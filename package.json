@@ -30,7 +30,6 @@
     "errio": "^1.2.2",
     "fast-safe-stringify": "^1.1.13",
     "heavy": "^4.0.3",
-    "is-generator-function": "^1.0.6",
     "lodash": "^4.17.4",
     "pino": "^4.3.0",
     "signal-exit": "^3.0.2",

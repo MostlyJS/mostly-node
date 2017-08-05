@@ -1,6 +1,6 @@
 import _ from 'lodash';
-import co from 'co';
-import isGeneratorFn from 'is-generator-function';
+import Co from 'co';
+import Util from './util';
 
 export default class Extension {
 
@@ -11,11 +11,11 @@ export default class Extension {
   }
 
   _add (handler) {
-    if (this._options.generators && isGeneratorFn(handler)) {
+    if (this._options.generators && Util.isGeneratorFunction(handler)) {
       this._stack.push(function () {
         // -3 because (req, res, next, prevValue, index)
         const next = arguments[arguments.length - 3];
-        return co(handler.apply(this, arguments)).then(x => next(null, x)).catch(next);
+        return Co(handler.apply(this, arguments)).then(x => next(null, x)).catch(next);
       });
     } else {
       this._stack.push(handler);

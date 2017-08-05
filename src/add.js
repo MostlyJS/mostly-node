@@ -1,7 +1,6 @@
 import _ from 'lodash';
-import co from 'co';
-import isGeneratorFn from 'is-generator-function';
-import util from './util';
+import Co from 'co';
+import Util from './util';
 
 export default class Add {
 
@@ -12,11 +11,11 @@ export default class Add {
   }
 
   _use (handler) {
-    if (this.options.generators && isGeneratorFn(handler)) {
+    if (this.options.generators && Util.isGeneratorFunction(handler)) {
       this.actMeta.middleware.push(function () {
         // -1 because (req, res, next)
         const next = arguments[arguments.length - 1];
-        return co(handler.apply(this, arguments)).then(x => next(null, x)).catch(next);
+        return Co(handler.apply(this, arguments)).then(x => next(null, x)).catch(next);
       });
     } else {
       this.actMeta.middleware.push(handler);
@@ -37,7 +36,7 @@ export default class Add {
   }
 
   invokeMiddleware (request, response, cb) {
-    util.serial(this.middleware, (item, next) => {
+    Util.serial(this.middleware, (item, next) => {
       item(request, response, next);
     }, cb);
   }
@@ -55,8 +54,8 @@ export default class Add {
   }
 
   set action (action) {
-    if (this.options.generators && isGeneratorFn(action)) {
-      this.actMeta.action = co.wrap(action);
+    if (this.options.generators && Util.isGeneratorFunction(action)) {
+      this.actMeta.action = Co.wrap(action);
       this.isGenFunc = true;
     } else {
       this.actMeta.action = action;
