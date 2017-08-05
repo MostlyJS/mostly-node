@@ -423,14 +423,12 @@ export default class MostlyCore extends EventEmitter {
 
       Util.serial(this._pluginRegistrations, each, (err) => {
         if (err) {
-          let error = null;
           if (err instanceof SuperError) {
-            error = err.rootCause || err.cause || err;
-          } else {
-            error = new Errors.MostlyError(Constants.PLUGIN_REGISTRATION_ERROR).causedBy(err);
+            err = err.rootCause || err.cause || err;
           }
-          this.log.error(error);
-          throw(error);
+          const internalError = new Errors.MostlyError(Constants.PLUGIN_REGISTRATION_ERROR).causedBy(err);
+          this.log.error(internalError);
+          throw(internalError);
         }
         if (_.isFunction(cb)) {
           cb.call(this);
@@ -497,12 +495,13 @@ export default class MostlyCore extends EventEmitter {
         if (err instanceof SuperError) {
           self._response.error = err.rootCause || err.cause || err;
         } else {
-          self._response.error = new Errors.MostlyError(
-            Constants.EXTENSION_ERROR, self.errorDetails).causedBy(err);
+          self._response.error = err;
         }
+        const internalError = new Errors.MostlyError(
+            Constants.EXTENSION_ERROR, self.errorDetails).causedBy(err);
+        self.log.error(internalError);
 
         self.emit('serverResponseError', self._response.error);
-        self.log.error(self._response.error);
       }
 
       // reply value from extension
@@ -580,7 +579,7 @@ export default class MostlyCore extends EventEmitter {
         if (err instanceof SuperError) {
           self._response.error = err.rootCause || err.cause || err;
         } else {
-          self._response.error = new Errors.BusinessError(Constants.BUSINESS_ERROR, self.errorDetails).causedBy(err);
+          self._response.error = err;
         }
 
         return self.finish();
@@ -601,11 +600,12 @@ export default class MostlyCore extends EventEmitter {
         if (err instanceof SuperError) {
           self._response.error = err.rootCause || err.cause || err;
         } else {
-          self._response.error = new Errors.MostlyError(
-            Constants.EXTENSION_ERROR, self.errorDetails).causedBy(err);
+          self._response.error = err;
         }
 
-        self.log.error(self._response.error);
+        const internalError = new Errors.MostlyError(
+            Constants.EXTENSION_ERROR, self.errorDetails).causedBy(err);
+        self.log.error(internalError);
 
         return self.finish();
       }
@@ -626,10 +626,13 @@ export default class MostlyCore extends EventEmitter {
             if (err instanceof SuperError) {
               self._response.error = err.rootCause || err.cause || err;
             } else {
-              self._response.error = new Errors.MostlyError(
-                Constants.ADD_MIDDLEWARE_ERROR, self.errorDetails).causedBy(err);
+              self._response.error = err;
             }
-            self.log.error(self._response.error);
+
+            let internalError = new Errors.MostlyError(
+                Constants.ADD_MIDDLEWARE_ERROR, self.errorDetails).causedBy(err);
+            self.log.error(internalError);
+
             return self.finish();
           }
 
@@ -650,8 +653,7 @@ export default class MostlyCore extends EventEmitter {
         if (err instanceof SuperError) {
           self._response.error = err.rootCause || err.cause || err;
         } else {
-          self._response.error = new Errors.ImplementationError(
-            Constants.IMPLEMENTATION_ERROR, self.errorDetails).causedBy(err);
+          self._response.error = err;
         }
 
         // service should exit
@@ -670,8 +672,7 @@ export default class MostlyCore extends EventEmitter {
         if (err instanceof SuperError) {
           self._response.error = err.rootCause || err.cause || err;
         } else {
-          self._response.error = new Errors.MostlyError(
-            Constants.EXTENSION_ERROR, self.errorDetails).causedBy(err);
+          self._response.error = err;
         }
 
         return self.finish();
@@ -820,10 +821,12 @@ export default class MostlyCore extends EventEmitter {
         if (err instanceof SuperError) {
           error = err.rootCause || err.cause || err;
         } else {
-          error = new Errors.MostlyError(Constants.EXTENSION_ERROR, self.errorDetails).causedBy(err);
+          error = err;
         }
+        const internalError = new Errors.MostlyError(Constants.EXTENSION_ERROR, self.errorDetails).causedBy(err);
+        self.log.error(internalError);
+
         self.emit('clientResponseError', error);
-        self.log.error(error);
 
         self._execute(error);
         return;
@@ -832,8 +835,11 @@ export default class MostlyCore extends EventEmitter {
       if (self._response.payload.error) {
         debug('act:response.payload.error', self._response.payload.error);
         let error = Errio.fromObject(self._response.payload.error);
+
+        const internalError = new Errors.BusinessError(Constants.BUSINESS_ERROR, self.errorDetails).causedBy(error);
+        self.log.error(internalError);
+
         self.emit('clientResponseError', error);
-        self.log.error(error);
 
         self._execute(error);
         return;
@@ -852,8 +858,8 @@ export default class MostlyCore extends EventEmitter {
         // if payload is invalid (decoding error)
         if (self._response.error) {
           let error = new Errors.ParseError(Constants.PAYLOAD_PARSING_ERROR, self.errorDetails).causedBy(self._response.error);
-          self.emit('clientResponseError', error);
           self.log.error(error);
+          self.emit('clientResponseError', error);
 
           self._execute(error);
           return;
@@ -865,10 +871,13 @@ export default class MostlyCore extends EventEmitter {
         if (err instanceof SuperError) {
           error = err.rootCause || err.cause || err;
         } else {
-          error = new Errors.FatalError(Constants.FATAL_ERROR, self.errorDetails).causedBy(err);
+          error = err;
         }
+
+        const internalError = new Errors.FatalError(Constants.FATAL_ERROR, self.errorDetails).causedBy(err);
+        self.log.fatal(internalError);
+
         self.emit('clientResponseError', error);
-        self.log.fatal(error);
 
         // let it crash
         if (self._config.crashOnFatal) {
@@ -884,9 +893,9 @@ export default class MostlyCore extends EventEmitter {
 
       // encoding issue
       if (m.error) {
-        let error = new Errors.MostlyError(Constants.EXTENSION_ERROR).causedBy(m.error);
-        self.emit('clientResponseError', error);
+        let error = new Errors.ParseError(Constants.PAYLOAD_PARSING_ERROR).causedBy(m.error);
         self.log.error(error);
+        self.emit('clientResponseError', error);
 
         self._execute(error);
         return;
@@ -897,10 +906,13 @@ export default class MostlyCore extends EventEmitter {
         if (err instanceof SuperError) {
           error = err.rootCause || err.cause || err;
         } else {
-          error = new Errors.MostlyError(Constants.EXTENSION_ERROR).causedBy(err);
+          error = err;
         }
+
+        const internalError = new Errors.MostlyError(Constants.EXTENSION_ERROR).causedBy(err);
+        self.log.error(internalError);
+
         self.emit('clientResponseError', error);
-        self.log.error(error);
 
         self._execute(error);
         return;
@@ -1005,11 +1017,14 @@ export default class MostlyCore extends EventEmitter {
         if (err instanceof SuperError) {
           error = err.rootCause || err.cause || err;
         } else {
-          error = new Errors.MostlyError(Constants.EXTENSION_ERROR).causedBy(err);
+          error = err;
         }
-        self.emit('clientResponseError', error);
+
+        let internalError = new Errors.MostlyError(Constants.EXTENSION_ERROR).causedBy(err);
+        self.log.error(internalError);
+
         self._response.error = error;
-        self.log.error(self._response.error);
+        self.emit('clientResponseError', error);
       }
 
       try {
@@ -1019,10 +1034,13 @@ export default class MostlyCore extends EventEmitter {
         if (err instanceof SuperError) {
           error = err.rootCause || err.cause || err;
         } else {
-          error = new Errors.FatalError(Constants.FATAL_ERROR, self.errorDetails).causedBy(err);
+          error = err;
         }
+
+        let internalError = new Errors.FatalError(Constants.FATAL_ERROR, self.errorDetails).causedBy(err);
+        self.log.fatal(internalError);
+
         self.emit('clientResponseError', error);
-        self.log.fatal(error);
 
         // let it crash
         if (self._config.crashOnFatal) {
@@ -1033,9 +1051,9 @@ export default class MostlyCore extends EventEmitter {
 
     let timeoutHandler = () => {
       const error = new Errors.TimeoutError(Constants.ACT_TIMEOUT_ERROR, self.errorDetails);
-      self.emit('clientResponseError', error);
       self.log.error(error);
       self._response.error = error;
+      self.emit('clientResponseError', error);
       self._extensions.onClientPostRequest.dispatch(self, onClientPostRequestHandler);
     };
 
