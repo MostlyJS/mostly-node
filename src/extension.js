@@ -34,7 +34,7 @@ export default class Extension {
     this._stack = this._stack.concat(handlers);
   }
 
-  invoke (ctx, cb) {
+  dispatch (ctx, cb) {
     const each = (item, next, prevValue, i) => {
       if (this._options.server) {
         const response = ctx._response;
