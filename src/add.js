@@ -1,6 +1,7 @@
 import _ from 'lodash';
 import co from 'co';
 import isGeneratorFn from 'is-generator-function';
+import util from './util';
 
 export default class Add {
 
@@ -33,6 +34,12 @@ export default class Add {
 
   end (cb) {
     this.actMeta.action = cb;
+  }
+
+  invokeMiddleware (request, response, cb) {
+    util.serial(this.middleware, (item, next) => {
+      item(request, response, next);
+    }, cb);
   }
 
   get middleware () {

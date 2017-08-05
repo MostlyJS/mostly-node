@@ -568,9 +568,7 @@ export default class MostlyCore extends EventEmitter {
         let action = self._actMeta.action.bind(self);
 
         // execute add middlewares
-        Util.serial(self._actMeta.middleware, (item, next) => {
-          item(self._request, self._response, next);
-        }, (err) => {
+        self._actMeta.invokeMiddleware(self._request, self._response, (err) => {
           // middleware error
           if (err) {
             if (err instanceof SuperError) {
