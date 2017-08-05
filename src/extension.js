@@ -1,3 +1,4 @@
+import _ from 'lodash';
 import co from 'co';
 import isGeneratorFn from 'is-generator-function';
 
@@ -9,7 +10,7 @@ export default class Extension {
     this._options = options;
   }
 
-  add (handler) {
+  _add (handler) {
     if (this._options.generators && isGeneratorFn(handler)) {
       this._stack.push(function () {
         // -3 because (req, res, next, prevValue, index)
@@ -18,6 +19,14 @@ export default class Extension {
       });
     } else {
       this._stack.push(handler);
+    }
+  }
+
+  add (handler) {
+    if (_.isArray(handler)) {
+      handler.forEach(h => this._add(h));
+    } else {
+      this._add(handler);
     }
   }
 
@@ -42,15 +51,7 @@ export default class Extension {
     Extension.serial(this._stack, each, cb.bind(ctx));
   }
 
-  /**
-   * deprecated, unused function
-   *
-   * @param {any} array
-   * @param {any} method
-   * @param {any} callback
-   *
-   * @memberOf Extension
-   */
+  // unused function
   static parallel (array, method, callback) {
     if (!array.length) {
       callback();

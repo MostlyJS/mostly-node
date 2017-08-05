@@ -122,15 +122,15 @@ export default class MostlyCore extends EventEmitter {
     this._heavy.start();
 
     // will be executed before the client request is executed.
-    this._extensions.onClientPreRequest.addRange(DefaultExtensions.onClientPreRequest);
+    this._extensions.onClientPreRequest.add(DefaultExtensions.onClientPreRequest);
     // will be executed after the client received and decoded the request
-    this._extensions.onClientPostRequest.addRange(DefaultExtensions.onClientPostRequest);
+    this._extensions.onClientPostRequest.add(DefaultExtensions.onClientPostRequest);
     // will be executed before the server received the requests
-    this._extensions.onServerPreRequest.addRange(DefaultExtensions.onServerPreRequest);
+    this._extensions.onServerPreRequest.add(DefaultExtensions.onServerPreRequest);
     // will be executed before the server action is executed
-    this._extensions.onServerPreHandler.addRange(DefaultExtensions.onServerPreHandler);
+    this._extensions.onServerPreHandler.add(DefaultExtensions.onServerPreHandler);
     // will be executed before the server reply the response and build the message
-    this._extensions.onServerPreResponse.addRange(DefaultExtensions.onServerPreResponse);
+    this._extensions.onServerPreResponse.add(DefaultExtensions.onServerPreResponse);
 
     // use own logger
     if (this._config.logger) {
@@ -730,14 +730,14 @@ export default class MostlyCore extends EventEmitter {
     origPattern = Util.cleanPattern(origPattern);
 
     // create message object which represent the object behind the matched pattern
-    let isGenFunc = this._config.generators && isGeneratorFn(cb);
     let actMeta = new Add({
       schema: schema,
       pattern: origPattern,
-      action: isGenFunc? co.wrap(cb) : cb,
-      isGenFunc: isGenFunc,
       plugin: this.plugin$
-    });
+    }, { generators: this._config.generators });
+
+    // set callback
+    actMeta.action = cb;
 
     let handler = this._router.lookup(origPattern);
 
