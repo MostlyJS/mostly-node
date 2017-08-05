@@ -2,11 +2,16 @@ export default class ServerRequest {
 
   constructor (payload) {
     this._request = {};
+    this._locals = {};
     this.payload = payload;
   }
 
   get payload () {
     return this._request.value;
+  }
+
+  get locals () {
+    return this._locals;
   }
 
   get error () {

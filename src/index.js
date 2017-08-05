@@ -8,7 +8,6 @@ import OnExit from 'signal-exit';
 import TinySonic from 'tinysonic';
 import SuperError from 'super-error';
 import co from 'co';
-import isGeneratorFn from 'is-generator-function';
 import makeDebug from 'debug';
 
 import Errors from './errors';
