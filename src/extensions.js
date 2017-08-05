@@ -1,5 +1,6 @@
 import Constants from './constants';
 import Util from './util';
+const Errors = require('./errors');
 
 module.exports.onClientPreRequest = [function onClientPreRequest (next) {
   let ctx = this;
@@ -26,6 +27,23 @@ module.exports.onClientPreRequest = [function onClientPreRequest (next) {
   ctx.trace$.timestamp = currentTime;
   ctx.trace$.service = pattern.topic;
   ctx.trace$.method = Util.pattern(pattern);
+  
+  // detect recursion
+  if (this._config.maxRecursion > 1) {
+    const callSignature = `${ctx.trace$.traceId}:${ctx.trace$.method}`;
+    if (ctx.meta$ && ctx.meta$.referrers) {
+      let count = ctx.meta$.referrers[callSignature];
+      count += 1;
+      ctx.meta$.referrers[callSignature] = count;
+      if (count > this._config.maxRecursion) {
+        ctx.meta$.referrers[callSignature] = 0;
+        return next(new Errors.MaxRecursionError({ count: --count }));
+      }
+    } else {
+      ctx.meta$.referrers = {};
+      ctx.meta$.referrers[callSignature] = 1;
+    }
+  }
 
   // request
   let request = {

@@ -34,6 +34,7 @@ const defaultConfig = {
   name: 'mostly-' + Util.randomId(),
   crashOnFatal: true,
   logLevel: 'silent',
+  maxRecursion: 0,
   bloomrun: {
     indexing: 'inserting',
     lookupBeforeAdd: true
@@ -552,7 +553,8 @@ export default class MostlyCore extends EventEmitter {
       if (err) {
         debug('actionHandler:error', err);
         const errorDetails = {
-          pattern: self._actMeta.pattern,
+          service: self.trace$.service,
+          method: self._actMeta.method,
           app: self._config.name,
           ts: Util.nowHrTime()
         };

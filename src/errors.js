@@ -8,10 +8,12 @@ const BusinessError = MostlyError.subclass('BusinessError');
 const FeathersError = MostlyError.subclass('FeathersError');
 const FatalError = MostlyError.subclass('FatalError');
 const PatternNotFound = MostlyError.subclass('PatternNotFound');
-const PayloadValidationError = SuperError.subclass('PayloadValidationError');
+const MaxRecursionError = MostlyError.subclass('MaxRecursionError');
+const PayloadValidationError = MostlyError.subclass('PayloadValidationError');
 
 module.exports = {
   MostlyError,
+  MaxRecursionError,
   ParseError,
   TimeoutError,
   ImplementationError,
