@@ -35,6 +35,10 @@ const defaultConfig = {
   name: 'mostly-' + Util.randomId(),
   crashOnFatal: true,
   logLevel: 'silent',
+  bloomrun: {
+    indexing: 'inserting',
+    lookupBeforeAdd: true
+  },
   load: {
     sampleInterval: 0
   }
@@ -48,7 +52,7 @@ export default class MostlyCore extends EventEmitter {
     options = options || {};
     if (options.name) options.name = options.name + '-' + Util.randomId();
     this._config = Object.assign(defaultConfig, options);
-    this._router = Bloomrun();
+    this._router = Bloomrun(this._config.bloomrun);
     this._heavy = new Heavy(this._config.load);
     this._transport = new NatsTransport({
       transport
@@ -738,7 +742,7 @@ export default class MostlyCore extends EventEmitter {
     let handler = this._router.lookup(origPattern);
 
     // check if pattern is already registered
-    if (handler) {
+    if (this._config.bloomrun.lookupBeforeAdd && handler) {
       let error = new Errors.MostlyError(Constants.PATTERN_ALREADY_IN_USE, {
         pattern
       });
