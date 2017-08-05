@@ -1,5 +1,17 @@
 // Errors messages
 module.exports = {
+  // General
+  NATS_QUEUEGROUP_PREFIX: 'queue',
+  // Request types
+  REQUEST_TYPE_PUBSUB: 'pubsub',
+  REQUEST_TYPE_REQUEST: 'request',
+  // Errors messages
+  TRANSPORT_CONNECTED: 'NATS connected!',
+  TRANSPORT_CONN_RECONNECTING: 'NATS reconnecting ...',
+  TRANSPORT_CONN_RECONNECTED: 'NATS reconnected!',
+  TRANSPORT_ERROR: 'Could not connect to NATS!',
+  TRANSPORT_CONN_CLOSED: 'NATS connection closed!',
+
   JSON_PARSE_ERROR: 'Invalid JSON payload',
   ACT_TIMEOUT_ERROR: 'Timeout',
   NO_TOPIC_TO_SUBSCRIBE: 'No topic to subscribe',
@@ -11,8 +23,6 @@ module.exports = {
   PAYLOAD_PARSING_ERROR: 'Invalid payload',
   ADD_MIDDLEWARE_ERROR: 'Middleware error',
   PLUGIN_ALREADY_REGISTERED: 'Plugin was already registered',
-  TRANSPORT_CONNECTED: 'Connected!',
-  TRANSPORT_ERROR: 'Connect error!',
   PLUGIN_ADDED: 'PLUGIN - ADDED!',
   PAYLOAD_VALIDATION_ERROR: 'Invalid payload',
   ADD_ADDED: 'ADD - ADDED',

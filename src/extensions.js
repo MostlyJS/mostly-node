@@ -1,3 +1,4 @@
+import Constants from './constants';
 import Util from './util';
 
 module.exports.onClientPreRequest = [function onClientPreRequest (next) {
@@ -31,7 +32,7 @@ module.exports.onClientPreRequest = [function onClientPreRequest (next) {
     id: pattern.requestId$ || Util.randomId(),
     parentId: ctx.request$.id || pattern.requestParentId$,
     timestamp: currentTime,
-    type: pattern.pubsub$ === true ? 'pubsub' : 'request',
+    type: pattern.pubsub$ === true ? Constants.REQUEST_TYPE_PUBSUB : Constants.REQUEST_TYPE_REQUEST,
     duration: 0
   };
 

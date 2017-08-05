@@ -75,7 +75,7 @@ export default class MostlyCore extends EventEmitter {
       duration: 0,
       parentId: '',
       timestamp: 0,
-      type: 'request',
+      type: Constants.REQUEST_TYPE_REQUEST,
       id: ''
     };
 
@@ -322,7 +322,10 @@ export default class MostlyCore extends EventEmitter {
   fatal() {
     this.close();
 
-    process.exit(1);
+    // give nats driver chance to do rest work
+    setImmediate(() => {
+      process.exit(1);
+    });
   }
 
   /**
@@ -366,6 +369,19 @@ export default class MostlyCore extends EventEmitter {
    * Ready callback when Nats connected
    */
   ready(cb) {
+    this._transport.driver.on('error', (error) => {
+      this.log.error(error, Constants.TRANSPORT_ERROR);
+      throw (error);
+    });
+    this._transport.driver.on('reconnect', () => {
+      this.log.info(Constants.TRANSPORT_CONN_RECONNECTED);
+    });
+    this._transport.driver.on('reconnecting', () => {
+      this.log.warn(Constants.TRANSPORT_CONN_RECONNECTING);
+    });
+    this._transport.driver.on('close', () => {
+      this.log.warn(Constants.TRANSPORT_CONN_CLOSED);
+    });
     this._transport.driver.on('connect', () => {
       this.log.info(Constants.TRANSPORT_CONNECTED);
 
@@ -584,7 +600,7 @@ export default class MostlyCore extends EventEmitter {
           }
 
           // if request type is 'pubsub' we dont have to reply back
-          if (self._request.payload.request.type === 'pubsub') {
+          if (self._request.payload.request.type === Constants.REQUEST_TYPE_PUBSUB) {
             action(self._request.payload.pattern);
             return self.finish();
           }
@@ -681,7 +697,7 @@ export default class MostlyCore extends EventEmitter {
     } else {
       // queue group names allow load balancing of services
       self._topics[topic] = self._transport.subscribe(topic, {
-        'queue': 'queue.' + topic,
+        'queue': `${Constants.NATS_QUEUEGROUP_PREFIX}.${topic}`,
         max: maxMessages
       }, handler);
     }
