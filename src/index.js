@@ -7,6 +7,8 @@ import Pino from 'pino';
 import OnExit from 'signal-exit';
 import TinySonic from 'tinysonic';
 import SuperError from 'super-error';
+import co from 'co';
+import isGeneratorFn from 'is-generator-function';
 import makeDebug from 'debug';
 
 import Errors from './errors';
@@ -29,6 +31,7 @@ const debug = makeDebug('mostly:core');
 const defaultConfig = {
   timeout: 2000,
   debug: false,
+  generators: false,
   name: 'mostly-' + Util.randomId(),
   crashOnFatal: true,
   logLevel: 'silent',
@@ -82,6 +85,7 @@ export default class MostlyCore extends EventEmitter {
     this._pattern = null;
     this._actMeta = null;
     this._actCallback = null;
+    this._execute = null;
     this._cleanPattern = '';
     this._pluginRegistrations = [];
     this._decorations = {};
@@ -103,11 +107,11 @@ export default class MostlyCore extends EventEmitter {
 
     // define extension points
     this._extensions = {
-      onClientPreRequest: new Extension('onClientPreRequest'),
-      onClientPostRequest: new Extension('onClientPostRequest'),
-      onServerPreHandler: new Extension('onServerPreHandler', true),
-      onServerPreRequest: new Extension('onServerPreRequest', true),
-      onServerPreResponse: new Extension('onServerPreResponse', true)
+      onClientPreRequest: new Extension('onClientPreRequest', { server: false, generators: this._config.generators }),
+      onClientPostRequest: new Extension('onClientPostRequest', { server: false, generators: this._config.generators }),
+      onServerPreHandler: new Extension('onServerPreHandler', { server: true, generators: this._config.generators }),
+      onServerPreRequest: new Extension('onServerPreRequest', { server: true, generators: this._config.generators }),
+      onServerPreResponse: new Extension('onServerPreResponse', { server: true, generators: this._config.generators })
     };
 
     // start tracking process stats
@@ -585,7 +589,11 @@ export default class MostlyCore extends EventEmitter {
           }
 
           // execute RPC action
-          action(self._request.payload.pattern, actionHandler.bind(self));
+          if (self._config.generators && self._actMeta.isGenFunc) {
+            action(self._request.payload.pattern).then(x => actionHandler.call(self, null, x)).catch(e => actionHandler.call(self, e));
+          } else {
+            action(self._request.payload.pattern, actionHandler.bind(self));
+          }
         });
       } catch(err) {
         // try to get rootCause then cause and last the thrown error
@@ -718,10 +726,12 @@ export default class MostlyCore extends EventEmitter {
     origPattern = Util.cleanPattern(origPattern);
 
     // create message object which represent the object behind the matched pattern
+    let isGenFunc = this._config.generators && isGeneratorFn(cb);
     let actMeta = new Add({
       schema: schema,
       pattern: origPattern,
-      action: cb,
+      action: isGenFunc? co.wrap(cb) : cb,
+      isGenFunc: isGenFunc,
       plugin: this.plugin$
     });
 
@@ -774,29 +784,25 @@ export default class MostlyCore extends EventEmitter {
         self.emit('clientResponseError', error);
         self.log.error(error);
 
-        if (self._actCallback) {
-          return self._actCallback(error);
-        }
-
+        self._execute(error);
         return;
       }
 
-      if (self._actCallback) {
-        if (self._response.payload.error) {
-          debug('act:response.payload.error', self._response.payload.error);
-          let responseError = Errio.fromObject(self._response.payload.error);
-          let responseErrorCause = responseError.cause;
-          let error = new Errors.BusinessError(Constants.BUSINESS_ERROR, {
-            pattern: self._cleanPattern
-          }).causedBy(responseErrorCause ? responseError.cause : responseError);
-          self.emit('clientResponseError', error);
-          self.log.error(error);
+      if (self._response.payload.error) {
+        debug('act:response.payload.error', self._response.payload.error);
+        let responseError = Errio.fromObject(self._response.payload.error);
+        let responseErrorCause = responseError.cause;
+        let error = new Errors.BusinessError(Constants.BUSINESS_ERROR, {
+          pattern: self._cleanPattern
+        }).causedBy(responseErrorCause ? responseError.cause : responseError);
+        self.emit('clientResponseError', error);
+        self.log.error(error);
 
-          return self._actCallback(responseError);
-        }
-
-        self._actCallback(null, self._response.payload.result);
+        self._execute(responseError);
+        return;
       }
+
+      self._execute(null, self._response.payload.result);
     }
 
     function sendRequestHandler(response) {
@@ -814,9 +820,8 @@ export default class MostlyCore extends EventEmitter {
           self.emit('clientResponseError', error);
           self.log.error(error);
 
-          if (self._actCallback) {
-            return self._actCallback(error);
-          }
+          self._execute(error);
+          return;
         }
 
         self._extensions.onClientPostRequest.invoke(self, onClientPostRequestHandler);
@@ -845,10 +850,7 @@ export default class MostlyCore extends EventEmitter {
         self.emit('clientResponseError', error);
         self.log.error(error);
 
-        if (self._actCallback) {
-          return self._actCallback(error);
-        }
-
+        self._execute(error);
         return;
       }
 
@@ -857,10 +859,7 @@ export default class MostlyCore extends EventEmitter {
         self.emit('clientResponseError', error);
         self.log.error(error);
 
-        if (self._actCallback) {
-          return self._actCallback(error);
-        }
-
+        self._execute(error);
         return;
       }
 
@@ -878,7 +877,7 @@ export default class MostlyCore extends EventEmitter {
         const optOptions = {};
         // limit on the number of responses the requestor may receive
         if (self._pattern.maxMessages$ > 0) {
-          optOptions.max = self._pattern.maxMessages$
+          optOptions.max = self._pattern.maxMessages$;
         } else if (self._pattern.maxMessages$ !== -1) {
           optOptions.max = 1;
         } // else unlimited messages
@@ -902,7 +901,38 @@ export default class MostlyCore extends EventEmitter {
     ctx._request = new ClientRequest();
     ctx._isServer = false;
 
+    if (cb) {
+      if (this._config.generators) {
+        ctx._actCallback = co.wrap(cb.bind(ctx));
+      } else {
+        ctx._actCallback = cb.bind(ctx);
+      }
+    }
+    
     ctx._extensions.onClientPreRequest.invoke(ctx, onPreRequestHandler);
+
+    // dont return promise when generators is set to false
+    if (this._config.generators) {
+      return new Promise((resolve, reject) => {
+        ctx._execute = (err, result) => {
+          if (ctx._actCallback) {
+            ctx._actCallback(err, result).then(x => resolve(x)).catch(x => reject(x));
+          } else {
+            if (err) {
+              reject(err);
+            } else {
+              resolve(result);
+            }
+          }
+        };
+      });
+    } else {
+      ctx._execute = (err, result) => {
+        if (ctx._actCallback) {
+          ctx._actCallback(err, result);
+        }
+      };
+    }
   }
 
   /**
@@ -923,20 +953,18 @@ export default class MostlyCore extends EventEmitter {
         self.log.error(self._response.error);
       }
 
-      if (self._actCallback) {
-        try {
-          self._actCallback(self._response.error);
-        } catch(err) {
-          let error = new Errors.FatalError(Constants.FATAL_ERROR, {
-            pattern
-          }).causedBy(err);
-          self.emit('clientResponseError', error);
-          self.log.fatal(error);
+      try {
+        self._execute(self._response.error);
+      } catch(err) {
+        let error = new Errors.FatalError(Constants.FATAL_ERROR, {
+          pattern
+        }).causedBy(err);
+        self.emit('clientResponseError', error);
+        self.log.fatal(error);
 
-          // let it crash
-          if (self._config.crashOnFatal) {
-            self.fatal();
-          }
+        // let it crash
+        if (self._config.crashOnFatal) {
+          self.fatal();
         }
       }
     }
