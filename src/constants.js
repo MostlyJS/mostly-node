@@ -2,6 +2,8 @@
 module.exports = {
   // General
   NATS_QUEUEGROUP_PREFIX: 'queue',
+  // NATS error codes
+  NATS_CODE_CONN_ERR: 'CONN_ERR',
   // Request types
   REQUEST_TYPE_PUBSUB: 'pubsub',
   REQUEST_TYPE_REQUEST: 'request',
