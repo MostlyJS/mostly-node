@@ -13,6 +13,14 @@ export default class Reply {
     return this._response.payload;
   }
 
+  set error (value) {
+    this._response.error = value;
+  }
+
+  get error () {
+    return this._response.error;
+  }
+
   /**
    * Abort the current request and respond wih the passed value
    */
