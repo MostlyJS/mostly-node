@@ -402,7 +402,7 @@ export default class MostlyCore extends EventEmitter {
       this.log.error('NATS Code: \'%s\', Message: %s', error.code, error.message);
 
       // exit only on connection issues
-      if (error.code === Constants.NATS_CODE_CONN_ERR) {
+      if (Constants.NATS_CONN_ERROR_CODES.indexOf(error.code) > -1) {
         throw (error);
       }
     });
