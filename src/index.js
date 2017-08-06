@@ -5,12 +5,12 @@ import Errio from 'errio';
 import Heavy from 'heavy';
 import _ from 'lodash';
 import Pino from 'pino';
-import OnExit from 'signal-exit';
 import TinySonic from 'tinysonic';
 import SuperError from 'super-error';
 import Co from 'co';
 import makeDebug from 'debug';
 
+import BeforeExit from './beforeExit';
 import Errors from './errors';
 import Constants from './constants';
 import Extension from './extension';
@@ -186,23 +186,24 @@ export default class MostlyCore extends EventEmitter {
       }, pretty);
     }
 
-    // no matter how a process exits log and fire event
-    OnExit((code, signal) => {
-      // Signal 0 checks if any process with the given PID is running
-      if (code === 0) {
-        return;
-      }
+    this._beforeExit = new BeforeExit();
 
-      this.log.fatal({
-        code,
-        signal
-      }, 'process exited');
-      this.emit('exit', {
-        code,
-        signal
-      });
+    this._beforeExit.addAction((signal) => {
+      this.log.fatal({ signal }, 'process exited');
+      this.emit('exit', { signal });
       this.close();
     });
+
+    this._beforeExit.addAction(() => {
+      return new Promise((resolve, reject) => {
+        this.close((err) => {
+          if (err) return reject(err);
+          resolve();
+        });
+      });
+    });
+
+    this._beforeExit.init();
   }
 
   /**
@@ -1141,18 +1142,49 @@ export default class MostlyCore extends EventEmitter {
     return this._router.list(pattern, options);
   }
 
+  removeAll () {
+    _.each(this._topics, (val, key) => this.remove(key));
+  }
+
   /**
    * Close the process watcher and the underlying transort driver.
    */
-  close() {
+  close(cb) {
     this._extensions.onClose.dispatch(this, (err, val) => {
-      this._heavy.stop();
-      this._transport.close();
-      
-      if (err) {
-        this.log.fatal(err);
-        this.emit('error', err);
+      // no callback no queue processing
+      if (!_.isFunction(cb)) {
+        this._heavy.stop();
+        this._transport.close();
+        if (err) {
+          this.log.fatal(err);
+          this.emit('error', err);
+        }
+        return;
       }
+
+      // remove all active subscriptions
+      this.removeAll();
+
+      // Waiting before all queued messages was proceed
+      // and then close hemera and nats
+      this._transport.flush(() => {
+        this._heavy.stop();
+        // close NATS
+        this._transport.close();
+
+        if (err) {
+          this.log.fatal(err);
+          this.emit('error', err);
+          if (_.isFunction(cb)) {
+            cb(err);
+          }
+        } else {
+          this.log.info(Constants.GRACEFULLY_SHUTDOWN);
+          if (_.isFunction(cb)) {
+            cb(null, val);
+          }
+        }
+      });
     });
   }
 }

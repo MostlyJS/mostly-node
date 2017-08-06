@@ -20,6 +20,10 @@ export default class NatsTransport {
     return this.nc.close.apply(this.nc, arguments);
   }
 
+  flush () {
+    return this.nc.flush.apply(this.nc, arguments);
+  }
+
   subscribe () {
     return this.nc.subscribe.apply(this.nc, arguments);
   }

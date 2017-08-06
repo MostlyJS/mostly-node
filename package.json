@@ -33,7 +33,6 @@
     "lodash": "^4.17.4",
     "pino": "^4.3.0",
     "semver": "^5.4.1",
-    "signal-exit": "^3.0.2",
     "super-error": "^2.0.0",
     "tinysonic": "^1.2.0"
   },
