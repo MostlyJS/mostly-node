@@ -48,7 +48,7 @@ export default class Extension {
       }
     };
 
-    Extension.serial(this._stack, each, cb.bind(ctx));
+    Extension.serial(this._stack, each, cb);
   }
 
   // unused function
