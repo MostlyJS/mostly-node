@@ -22,9 +22,9 @@ function onClientPreRequest (next) {
 
   // tracing
   ctx.trace$ = pattern.trace$ || {};
-  ctx.trace$.parentSpanId = prevCtx.trace$.spanId;
-  ctx.trace$.traceId = prevCtx.trace$.traceId || Util.randomId();
-  ctx.trace$.spanId = pattern.trace$ ? pattern.trace$.spanId : Util.randomId();
+  ctx.trace$.parentSpanId = ctx.trace$.spanId || prevCtx.trace$.spanId;
+  ctx.trace$.traceId = ctx.trace$.traceId || prevCtx.trace$.traceId || Util.randomId();
+  ctx.trace$.spanId = Util.randomId();
   ctx.trace$.timestamp = currentTime;
   ctx.trace$.service = pattern.topic;
   ctx.trace$.method = Util.pattern(pattern);
@@ -144,6 +144,12 @@ function onServerPreRequest (req, res, next) {
 
   ctx._request.payload = m.value;
   ctx._request.error = m.error;
+
+  // incoming pattern
+  ctx._pattern = ctx._request.payload.pattern;
+
+  // find matched route
+  ctx._actMeta = ctx._router.lookup(ctx._pattern);
 
   ctx.emit('serverPreRequest');
 

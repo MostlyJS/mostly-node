@@ -30,8 +30,8 @@ const debug = makeDebug('mostly:core');
 
 const defaultConfig = {
   timeout: 2000, // max execution time of a request
-  debug: false,
   generators: false,  // promise and generators support
+  tag: '',            // The tag string of this mostly instance
   name: `node-${Os.hostname()}-${Util.randomId()}`, // node name
   crashOnFatal: true, // Should gracefully exit the process at unhandled exceptions or fatal errors
   logLevel: 'silent', // 'fatal', 'error', 'warn', 'info', 'debug', 'trace'; also 'silent'
@@ -669,12 +669,6 @@ export default class MostlyCore extends EventEmitter {
 
   _onServerPreRequestHandler(err, value) {
     let self = this;
-
-    // icnoming pattern
-    self._pattern = self._request.payload.pattern;
-
-    // find matched route
-    self._actMeta = self._router.lookup(self._pattern);
 
     if (err) {
       if (err instanceof SuperError) {
