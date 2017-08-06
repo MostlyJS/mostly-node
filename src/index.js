@@ -25,6 +25,7 @@ import ClientRequest from './clientRequest';
 import ClientResponse from './clientResponse';
 import Serializers from './serializer';
 import Add from './add';
+import Plugin from './plugin';
 
 const debug = makeDebug('mostly:core');
 
@@ -91,12 +92,12 @@ export default class MostlyCore extends EventEmitter {
     this.meta$ = {};
     this.delegate$ = {};
     this.auth$ = {};
-    this.plugin$ = {
+    this.plugin$ = new Plugin({
       options: {},
       attributes: {
         name: 'core'
       }
-    };
+    });
     this.trace$ = {};
     this.request$ = {
       duration: 0,
@@ -125,7 +126,7 @@ export default class MostlyCore extends EventEmitter {
     // contains the list of all registered plugins
     // the core is also a plugin
     this._plugins = {
-      core: this.plugin$.attributes
+      core: this.plugin$
     };
 
     this._encoder = {
