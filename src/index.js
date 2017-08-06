@@ -11,7 +11,6 @@ import Co from 'co';
 import makeDebug from 'debug';
 
 import Errors from './errors';
-import CircuitBreaker from './circuitBreaker';
 import Constants from './constants';
 import Extension from './extension';
 import Util from './util';
@@ -150,6 +149,9 @@ export default class MostlyCore extends EventEmitter {
 
     // start tracking process stats
     this._heavy.start();
+
+    // contains the list of circuit breaker of all act calls
+    this._circuitBreakerMap = new Map();
 
     // will be executed before the client request is executed.
     this._extensions.onClientPreRequest.add(DefaultExtensions.onClientPreRequest);
@@ -509,16 +511,9 @@ export default class MostlyCore extends EventEmitter {
 
       // check if an error was already wrapped
       if (self._response.error) {
-        // don't handle circuit breaker error as failure
-        if (self._config.circuitBreaker.enabled && !(self._response.error instanceof Errors.CircuitBreakerError)) {
-          self._circuitBreaker.failure();
-        }
         self.emit('serverResponseError', self._response.error);
         self.log.error(self._response.error);
       } else if (err) { // check for an extension error
-        if (self._config.circuitBreaker.enabled) {
-          self._circuitBreaker.failure();
-        }
         if (err instanceof SuperError) {
           self._response.error = err.rootCause || err.cause || err;
         } else {
@@ -529,8 +524,6 @@ export default class MostlyCore extends EventEmitter {
         self.log.error(internalError);
 
         self.emit('serverResponseError', self._response.error);
-      } else if (self._config.circuitBreaker.enabled) {
-        self._circuitBreaker.success();
       }
 
       // reply value from extension
@@ -701,19 +694,6 @@ export default class MostlyCore extends EventEmitter {
       // find matched route
       self._actMeta = self._router.lookup(self._pattern);
 
-      if (self._config.circuitBreaker.enabled && self._actMeta) {
-        // get circuit breaker of server method
-        self._circuitBreaker = self._actMeta.actMeta.circuitBreaker;
-        if (!self._circuitBreaker.available()) {
-          // trigger halp-open timer
-          self._circuitBreaker.failure();
-          self._response.error = new Errors.CircuitBreakerError(
-            `Circuit breaker is ${self._circuitBreaker.state}`,
-            { state: self._circuitBreaker.state });
-          return self.finish();
-        }
-      }
-
       if (err) {
         if (err instanceof SuperError) {
           self._response.error = err.rootCause || err.cause || err;
@@ -753,7 +733,6 @@ export default class MostlyCore extends EventEmitter {
       ctx._pattern = {};
       ctx._actMeta = {};
       ctx._isServer = true;
-      ctx._circuitBreaker = null;
 
       ctx._extensions.onServerPreRequest.dispatch(ctx, onServerPreRequestHandler);
     };
@@ -817,14 +796,6 @@ export default class MostlyCore extends EventEmitter {
       pattern: origPattern,
       plugin: this.plugin$
     };
-
-    // only create object when circuit breaker is enabled
-    const circuitBreakerConfig = pattern.circuitBreaker$ || this._config.circuitBreaker;
-    if (circuitBreakerConfig.enabled) {
-      let circuitBreaker = new CircuitBreaker(circuitBreakerConfig);
-      circuitBreaker.on('stateChange', (state) => this.emit('circuit-breaker.stateChange', state));
-      actMeta.circuitBreaker = circuitBreaker;
-    }
 
     // create message object which represent the object behind the matched pattern
     let addDefinition = new Add(actMeta, { generators: this._config.generators });
@@ -1009,6 +980,7 @@ export default class MostlyCore extends EventEmitter {
     ctx._response = new ClientResponse();
     ctx._request = new ClientRequest();
     ctx._isServer = false;
+    ctx._execute = null;
 
     // topic is needed to subscribe on a subject in NATS
     if (!pattern.topic) {
@@ -1028,12 +1000,19 @@ export default class MostlyCore extends EventEmitter {
       }
     }
     
-    ctx._extensions.onClientPreRequest.dispatch(ctx, onPreRequestHandler);
-
     // dont return promise when generators is set to false
     if (this._config.generators) {
-      return new Promise((resolve, reject) => {
+      const promise = new Promise((resolve, reject) => {
         ctx._execute = (err, result) => {
+          if (ctx._config.circuitBreaker.enabled) {
+            const circuitBreaker = ctx._circuitBreakerMap.get(ctx.trace$.method);
+            if (err) {
+              circuitBreaker.failure();
+            } else {
+              circuitBreaker.success();
+            }
+          }
+
           if (ctx._actCallback) {
             ctx._actCallback(err, result).then(x => resolve(x)).catch(x => reject(x));
           } else {
@@ -1045,12 +1024,24 @@ export default class MostlyCore extends EventEmitter {
           }
         };
       });
+      
+      ctx._extensions.onClientPreRequest.dispatch(ctx, onPreRequestHandler);
+      return promise;
     } else {
       ctx._execute = (err, result) => {
+        if (ctx._config.circuitBreaker.enabled) {
+          const circuitBreaker = ctx._circuitBreakerMap.get(ctx.trace$.method);
+          if (err) {
+            circuitBreaker.failure();
+          } else {
+            circuitBreaker.success();
+          }
+        }
         if (ctx._actCallback) {
           ctx._actCallback(err, result);
         }
       };
+      ctx._extensions.onClientPreRequest.dispatch(ctx, onPreRequestHandler);
     }
   }
 
