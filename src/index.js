@@ -33,6 +33,7 @@ const defaultConfig = {
   timeout: 2000,      // max execution time of a request
   pluginTimeout: 3000,// max intialization time for a plugin
   tag: '',            // The tag string of this mostly instance
+  prettyLog: true,    // enables pino pretty logger (Don't use it in production the output isn't JSON)
   name: `node-${Os.hostname()}-${Util.randomId()}`, // node name
   crashOnFatal: true, // Should gracefully exit the process at unhandled exceptions or fatal errors
   logLevel: 'silent', // 'fatal', 'error', 'warn', 'info', 'debug', 'trace'; also 'silent'
@@ -171,19 +172,27 @@ export default class MostlyCore extends EventEmitter {
     if (this._config.logger) {
       this.log = this._config.logger;
     } else {
-      let pretty = Pino.pretty();
-
-      // Leads to too much listeners in tests
-      if (this._config.logLevel !== 'silent') {
-        pretty.pipe(process.stdout);
+      if (this._config.prettyLog) {
+        let pretty = Pino.pretty();
+        this.log = Pino({
+          name: this._config.name,
+          safe: true, // avoid error caused by circular references
+          level: this._config.logLevel,
+          serializers: Serializers
+        });
+        
+        // Leads to too much listeners in tests
+        if (this._config.logLevel !== 'silent') {
+          pretty.pipe(process.stdout);
+        }
+      } else {
+        this.log = Pino({
+          name: this._config.name,
+          safe: true, // avoid error caused by circular references
+          level: this._config.logLevel,
+          serializers: Serializers
+        });
       }
-
-      this.log = Pino({
-        name: this._config.name,
-        safe: true, // avoid error caused by circular references
-        level: this._config.logLevel,
-        serializers: Serializers
-      }, pretty);
     }
 
     this._beforeExit = new BeforeExit();
