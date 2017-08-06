@@ -27,6 +27,7 @@ import Serializers from './serializer';
 import CodecPipeline from './codecPipeline';
 import Add from './add';
 import Plugin from './plugin';
+import Handlers from './handlers';
 
 const debug = makeDebug('mostly:core');
 
@@ -533,7 +534,7 @@ export default class MostlyCore extends EventEmitter {
       message.error = Errio.toObject(internalError);
       message.result = null;
 
-      // Retry to encode with issue perhaps the cause was data related
+      // Retry to encode with issue perhaps the reason was data related
       m = this._encoderPipeline.run(message, this);
       this.log.error(internalError);
       this.emit('serverResponseError', m.error);
@@ -543,55 +544,6 @@ export default class MostlyCore extends EventEmitter {
     this._message = m.value;
   }
 
-  _onServerPreResponseHandler (err, value) {
-    const self = this;
-
-    // check if an error was already wrapped
-    if (self._response.error) {
-      self.emit('serverResponseError', self._response.error);
-      self.log.error(self._response.error);
-    } else if (err) { // check for an extension error
-      if (err instanceof SuperError) {
-        self._response.error = err.rootCause || err.cause || err;
-      } else {
-        self._response.error = err;
-      }
-      const internalError = new Errors.MostlyError(
-          Constants.EXTENSION_ERROR, self.errorDetails).causedBy(err);
-      self.log.error(internalError);
-
-      self.emit('serverResponseError', self._response.error);
-    }
-
-    // reply value from extension
-    if (value) {
-      self._response.payload = value;
-    }
-
-    // create message payload
-    self._buildMessage();
-
-    // indicates that an error occurs and that the program should exit
-    if (self._shouldCrash) {
-      // only when we have an inbox othwerwise exit the service immediately
-      if (self._replyTo) {
-        // send error back to callee
-        return self._transport.send(self._replyTo, self._message, () => {
-          // let it crash
-          if (self._config.crashOnFatal) {
-            self.fatal();
-          }
-        });
-      } else if (self._config.crashOnFatal) {
-        return self.fatal();
-      }
-    }
-
-    // reply only when we have an inbox
-    if (self._replyTo) {
-      return this._transport.send(this._replyTo, self._message);
-    }
-  }
 
   /**
    * Last step before the response is send to the callee.
@@ -599,7 +551,7 @@ export default class MostlyCore extends EventEmitter {
    */
   finish () {
     this._extensions.onServerPreResponse.dispatch(this, (err, val) => {
-      return this._onServerPreResponseHandler(err, val);
+      return Handlers.onServerPreResponseHandler(this, err, val);
     });
   }
 
@@ -639,112 +591,6 @@ export default class MostlyCore extends EventEmitter {
     self.finish();
   }
 
-  _onServerPreHandler (err, value) {
-    const self = this;
-
-    if (err) {
-      if (err instanceof SuperError) {
-        self._response.error = err.rootCause || err.cause || err;
-      } else {
-        self._response.error = err;
-      }
-
-      const internalError = new Errors.MostlyError(
-          Constants.EXTENSION_ERROR, self.errorDetails).causedBy(err);
-      self.log.error(internalError);
-
-      return self.finish();
-    }
-
-    // reply value from extension
-    if (value) {
-      self._response.payload = value;
-      return self.finish();
-    }
-
-    try {
-      let action = self._actMeta.action.bind(self);
-
-      // execute add middlewares
-      self._actMeta.dispatch(self._request, self._response, (err) => {
-        // middleware error
-        if (err) {
-          if (err instanceof SuperError) {
-            self._response.error = err.rootCause || err.cause || err;
-          } else {
-            self._response.error = err;
-          }
-
-          let internalError = new Errors.MostlyError(
-              Constants.ADD_MIDDLEWARE_ERROR, self.errorDetails).causedBy(err);
-          self.log.error(internalError);
-
-          return self.finish();
-        }
-
-        // if request type is 'pubsub' we dont have to reply back
-        if (self._request.payload.request.type === Constants.REQUEST_TYPE_PUBSUB) {
-          action(self._request.payload.pattern);
-          return self.finish();
-        }
-
-        // execute RPC action
-        if (self._actMeta.isPromisable) {
-          action(self._request.payload.pattern)
-            .then(x => self._actionHandler(null, x))
-            .catch(e => self._actionHandler(e));
-        } else {
-          action(self._request.payload.pattern, self._actionHandler.bind(self));
-        }
-      });
-    } catch (err) {
-      if (err instanceof SuperError) {
-        self._response.error = err.rootCause || err.cause || err;
-      } else {
-        self._response.error = err;
-      }
-
-      // service should exit
-      self._shouldCrash = true;
-
-      self.finish();
-    }
-  }
-
-  _onServerPreRequestHandler (err, value) {
-    let self = this;
-
-    if (err) {
-      if (err instanceof SuperError) {
-        self._response.error = err.rootCause || err.cause || err;
-      } else {
-        self._response.error = err;
-      }
-
-      return self.finish();
-    }
-
-    // reply value from extension
-    if (value) {
-      self._response.payload = value;
-      return self.finish();
-    }
-
-    // check if a handler is registered with this pattern
-    if (self._actMeta) {
-      self._extensions.onServerPreHandler.dispatch(self, (err, val) => {
-        return self._onServerPreHandler(err, val);
-      });
-    } else {
-      const internalError = new Errors.PatternNotFound(Constants.PATTERN_NOT_FOUND, self.errorDetails);
-      self.log.error(internalError);
-      self._response.error = internalError;
-
-      // send error back to callee
-      self.finish();
-    }
-  }
-
   /**
    * Attach one handler to the topic subscriber.
    * With subToMany and maxMessages you control NATS specific behaviour.
@@ -771,7 +617,7 @@ export default class MostlyCore extends EventEmitter {
       ctx._isServer = true;
 
       ctx._extensions.onServerPreRequest.dispatch(ctx, (err, val) => {
-        return ctx._onServerPreRequestHandler(err, val);
+        return Handlers.onServerPreRequestHandler(ctx, err, val);
       });
     };
 
@@ -889,44 +735,13 @@ export default class MostlyCore extends EventEmitter {
     this.log.info(origPattern, Constants.ADD_ADDED);
 
     // subscribe on topic
-    this.subscribe(pattern.topic, pattern.pubsub$, pattern.maxMessages$, pattern.queue$);
+    this.subscribe(
+      pattern.topic,
+      pattern.pubsub$,
+      pattern.maxMessages$,
+      pattern.queue$);
 
     return addDefinition;
-  }
-
-  _onClientPostRequestHandler (err) {
-    const self = this;
-    // extension error
-    if (err) {
-      let error = null;
-      if (err instanceof SuperError) {
-        error = err.rootCause || err.cause || err;
-      } else {
-        error = err;
-      }
-      const internalError = new Errors.MostlyError(Constants.EXTENSION_ERROR, self.errorDetails).causedBy(err);
-      self.log.error(internalError);
-
-      self.emit('clientResponseError', error);
-
-      self._execute(error);
-      return;
-    }
-
-    if (self._response.payload.error) {
-      debug('act:response.payload.error', self._response.payload.error);
-      let error = Errio.fromObject(self._response.payload.error);
-
-      const internalError = new Errors.BusinessError(Constants.BUSINESS_ERROR, self.errorDetails).causedBy(error);
-      self.log.error(internalError);
-
-      self.emit('clientResponseError', error);
-
-      self._execute(error);
-      return;
-    }
-
-    self._execute(null, self._response.payload.result);
   }
 
   _sendRequestHandler (response) {
@@ -938,7 +753,8 @@ export default class MostlyCore extends EventEmitter {
     try {
       // if payload is invalid (decoding error)
       if (self._response.error) {
-        let error = new Errors.ParseError(Constants.PAYLOAD_PARSING_ERROR, self.errorDetails).causedBy(self._response.error);
+        let error = new Errors.ParseError(Constants.PAYLOAD_PARSING_ERROR, self.errorDetails)
+          .causedBy(self._response.error);
         self.log.error(error);
         self.emit('clientResponseError', error);
 
@@ -947,7 +763,7 @@ export default class MostlyCore extends EventEmitter {
       }
 
       self._extensions.onClientPostRequest.dispatch(self, (err) => {
-        return self._onClientPostRequestHandler(err);
+        return Handlers.onClientPostRequestHandler(self, err);
       });
     } catch (err) {
       let error = null;
@@ -966,66 +782,6 @@ export default class MostlyCore extends EventEmitter {
       if (self._config.crashOnFatal) {
         self.fatal();
       }
-    }
-  }
-
-  _onPreRequestHandler (err) {
-    const self = this;
-
-    let m = self._encoderPipeline.run(self._message, self);
-
-    // encoding issue
-    if (m.error) {
-      let error = new Errors.ParseError(Constants.PAYLOAD_PARSING_ERROR).causedBy(m.error);
-      self.log.error(error);
-      self.emit('clientResponseError', error);
-
-      self._execute(error);
-      return;
-    }
-
-    if (err) {
-      let error = null;
-      if (err instanceof SuperError) {
-        error = err.rootCause || err.cause || err;
-      } else {
-        error = err;
-      }
-
-      const internalError = new Errors.MostlyError(Constants.EXTENSION_ERROR).causedBy(err);
-      self.log.error(internalError);
-
-      self.emit('clientResponseError', error);
-
-      self._execute(error);
-      return;
-    }
-
-    self._request.payload = m.value;
-    self._request.error = m.error;
-
-    // use simple publish mechanism instead of request/reply
-    if (self._pattern.pubsub$ === true) {
-      if (self._actCallback) {
-        self.log.info(Constants.PUB_CALLBACK_REDUNDANT);
-      }
-
-      self._transport.send(self._pattern.topic, self._request.payload);
-    } else {
-      const optOptions = {};
-      // limit on the number of responses the requestor may receive
-      if (self._pattern.maxMessages$ > 0) {
-        optOptions.max = self._pattern.maxMessages$;
-      } else if (self._pattern.maxMessages$ !== -1) {
-        optOptions.max = 1;
-      } // else unlimited messages
-
-      // send request
-      self._sid = self._transport.sendRequest(self._pattern.topic,
-        self._request.payload, optOptions, self._sendRequestHandler.bind(self));
-
-      // handle timeout
-      self.handleTimeout();
     }
   }
 
@@ -1111,47 +867,10 @@ export default class MostlyCore extends EventEmitter {
       };
     });
     
-    ctx._extensions.onClientPreRequest.dispatch(ctx, (err) => ctx._onPreRequestHandler(err));
+    ctx._extensions.onClientPreRequest.dispatch(ctx, (err) => {
+      return Handlers.onPreRequestHandler(ctx, err);
+    });
     return promise;
-  }
-
-  _onClientTimeoutPostRequestHandler (err) {
-    const self = this;
-    if (err) {
-      let error = null;
-      if (err instanceof SuperError) {
-        error = err.rootCause || err.cause || err;
-      } else {
-        error = err;
-      }
-
-      let internalError = new Errors.MostlyError(Constants.EXTENSION_ERROR).causedBy(err);
-      self.log.error(internalError);
-
-      self._response.error = error;
-      self.emit('clientResponseError', error);
-    }
-
-    try {
-      self._execute(self._response.error);
-    } catch(err) {
-      let error = null;
-      if (err instanceof SuperError) {
-        error = err.rootCause || err.cause || err;
-      } else {
-        error = err;
-      }
-
-      let internalError = new Errors.FatalError(Constants.FATAL_ERROR, self.errorDetails).causedBy(err);
-      self.log.fatal(internalError);
-
-      self.emit('clientResponseError', error);
-
-      // let it crash
-      if (self._config.crashOnFatal) {
-        self.fatal();
-      }
-    }
   }
 
   /**
@@ -1170,7 +889,7 @@ export default class MostlyCore extends EventEmitter {
       self._response.error = error;
       self.emit('clientResponseError', error);
       self._extensions.onClientPostRequest.dispatch(self, (err) => {
-        return self._onClientTimeoutPostRequestHandler(err);
+        return Handlers.onClientTimeoutPostRequestHandler(self, err);
       });
     };
 
@@ -1209,39 +928,7 @@ export default class MostlyCore extends EventEmitter {
    */
   close (cb) {
     this._extensions.onClose.dispatch(this, (err, val) => {
-      // no callback no queue processing
-      if (!_.isFunction(cb)) {
-        this._heavy.stop();
-        this._transport.close();
-        if (err) {
-          this.log.fatal(err);
-          this.emit('error', err);
-        }
-        return;
-      }
-
-      // unsubscribe all active subscriptions
-      this.removeAll();
-
-      // wait until the client has flush all messages to nats
-      this._transport.flush(() => {
-        this._heavy.stop();
-        // close NATS
-        this._transport.close();
-
-        if (err) {
-          this.log.error(err);
-          this.emit('error', err);
-          if (_.isFunction(cb)) {
-            cb(err);
-          }
-        } else {
-          this.log.info(Constants.GRACEFULLY_SHUTDOWN);
-          if (_.isFunction(cb)) {
-            cb(null, val);
-          }
-        }
-      });
+      return Handlers.onClose(this, err, val);
     });
   }
 }

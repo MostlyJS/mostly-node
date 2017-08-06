@@ -36,9 +36,9 @@ export default class Extension {
         const request = ctx._request;
         const reply = new Reply(request, response, next);
 
-        item.call(ctx, request, reply, next);
+        item(ctx, request, reply, next);
       } else {
-        item.call(ctx, next);
+        item(ctx, next);
       }
     };
 
