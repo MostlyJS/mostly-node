@@ -708,7 +708,7 @@ export default class MostlyCore extends EventEmitter {
    * Attach one handler to the topic subscriber.
    * With subToMany and maxMessages you control NATS specific behaviour.
    */
-  subscribe(topic, subToMany, maxMessages) {
+  subscribe(topic, subToMany, maxMessages, queue) {
     const self = this;
 
     // avoid duplicate subscribers of the emit stream
@@ -740,9 +740,10 @@ export default class MostlyCore extends EventEmitter {
         max: maxMessages
       }, handler);
     } else {
+      const queueGroup = queue || `${Constants.NATS_QUEUEGROUP_PREFIX}.${topic}`;
       // queue group names allow load balancing of services
       self._topics[topic] = self._transport.subscribe(topic, {
-        'queue': `${Constants.NATS_QUEUEGROUP_PREFIX}.${topic}`,
+        'queue': queueGroup,
         max: maxMessages
       }, handler);
     }
@@ -832,7 +833,7 @@ export default class MostlyCore extends EventEmitter {
     this.log.info(origPattern, Constants.ADD_ADDED);
 
     // subscribe on topic
-    this.subscribe(pattern.topic, pattern.pubsub$, pattern.maxMessages$);
+    this.subscribe(pattern.topic, pattern.pubsub$, pattern.maxMessages$, pattern.queue$);
 
     return addDefinition;
   }
@@ -1035,6 +1036,8 @@ export default class MostlyCore extends EventEmitter {
               .then(x => resolve(x))
               .catch(x => reject(x));
           } else {
+            // any return value in a callback function will fullfilled the
+            // promise but an error will reject it
             const r = ctx._actCallback(err, result);
             if (r instanceof Error) {
               reject(r);
