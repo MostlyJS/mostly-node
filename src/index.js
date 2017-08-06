@@ -987,6 +987,7 @@ export default class MostlyCore extends EventEmitter {
     ctx._request = new ClientRequest();
     ctx._isServer = false;
     ctx._execute = null;
+    ctx._hasCallback = false;
 
     // topic is needed to subscribe on a subject in NATS
     if (!pattern.topic) {
@@ -999,6 +1000,7 @@ export default class MostlyCore extends EventEmitter {
     }
 
     if (cb) {
+      ctx._hasCallback = true;
       if (this._config.generators) {
         ctx._actCallback = Co.wrap(cb.bind(ctx));
       } else {
@@ -1019,7 +1021,7 @@ export default class MostlyCore extends EventEmitter {
             }
           }
 
-          if (ctx._actCallback) {
+          if (ctx._hasCallback) {
             ctx._actCallback(err, result).then(x => resolve(x)).catch(x => reject(x));
           } else {
             if (err) {
@@ -1043,7 +1045,7 @@ export default class MostlyCore extends EventEmitter {
             circuitBreaker.success();
           }
         }
-        if (ctx._actCallback) {
+        if (ctx._hasCallback) {
           ctx._actCallback(err, result);
         }
       };

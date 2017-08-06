@@ -55,6 +55,8 @@ function onClientPreRequest (next) {
     duration: 0
   };
 
+  ctx.emit('clientPreRequest');
+
   // build msg
   let message = {
     pattern: cleanPattern,
@@ -69,8 +71,6 @@ function onClientPreRequest (next) {
   ctx.log.info({
     outbound: ctx
   });
-
-  ctx.emit('clientPreRequest');
 
   next();
 }
