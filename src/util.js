@@ -5,6 +5,21 @@ for (let i = 0; i < 256; i++) { lut[i] = (i < 16 ? '0' : '') + (i).toString(16);
 
 export default class Util {
 
+  static natsWildcardToRegex (subject) {
+    let hasTokenWildcard = subject.indexOf('*') > -1;
+    let hasFullWildcard = subject.indexOf('>') > -1;
+
+    if (hasFullWildcard) {
+      subject = subject.replace('>', '[a-zA-Z0-9\\-\\.]+');
+      return new RegExp('^' + subject + '$', 'i');
+    } else if (hasTokenWildcard) {
+      subject = subject.replace('*', '[a-zA-Z0-9\\-]+');
+      return new RegExp('^' + subject + '$', 'i');
+    }
+
+    return subject;
+  }
+
   // Fast ID generator: e7 https://jsperf.com/uuid-generator-opt/18
   static randomId () {
     const d0 = Math.random() * 0xffffffff | 0;

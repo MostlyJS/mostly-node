@@ -806,7 +806,12 @@ export default class MostlyCore extends EventEmitter {
       addDefinition.action = cb;
     }
 
-    let handler = this._router.lookup(origPattern);
+    // Support full / token wildcards in subject
+    const bloomrunPattern = _.clone(origPattern);
+    // Convert nats wildcard tokens to RegexExp
+    bloomrunPattern.topic = Util.natsWildcardToRegex(bloomrunPattern.topic);
+
+    let handler = this._router.lookup(bloomrunPattern);
 
     // check if pattern is already registered
     if (this._config.bloomrun.lookupBeforeAdd && handler) {
@@ -820,7 +825,7 @@ export default class MostlyCore extends EventEmitter {
     }
 
     // add to bloomrun
-    this._router.add(origPattern, addDefinition);
+    this._router.add(bloomrunPattern, addDefinition);
 
     this.log.info(origPattern, Constants.ADD_ADDED);
 
