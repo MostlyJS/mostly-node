@@ -53,5 +53,6 @@
     "istanbul": "^0.4.5",
     "mocha": "^3.3.0",
     "rimraf": "^2.6.1"
-  }
+  },
+  "typings": "./index.d.ts"
 }
