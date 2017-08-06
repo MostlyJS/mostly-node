@@ -27,7 +27,7 @@ import Serializers from './serializer';
 import CodecPipeline from './codecPipeline';
 import Add from './add';
 import Plugin from './plugin';
-import Handlers from './handlers';
+import * as Handlers from './handlers';
 
 const debug = makeDebug('mostly:core');
 
@@ -928,7 +928,7 @@ export default class MostlyCore extends EventEmitter {
    */
   close (cb) {
     this._extensions.onClose.dispatch(this, (err, val) => {
-      return Handlers.onClose(this, err, val);
+      return Handlers.onClose(this, err, val, cb);
     });
   }
 }
