@@ -407,6 +407,32 @@ export default class MostlyCore extends EventEmitter {
     return Errors;
   }
 
+  registerPlugins (plugins, cb) {
+    const each = (item, next) => {
+      // plugin has no callback
+      if (item.register.length < 2) {
+        item.register(item.options);
+        return next();
+      }
+      item.register(item.options, next);
+    };
+
+    // register all plugins
+    Util.serial(plugins, each, (err) => {
+      if (err) {
+        if (err instanceof SuperError) {
+          err = err.rootCause || err.cause || err;
+        }
+        const internalError = new Errors.MostlyError(Constants.PLUGIN_REGISTRATION_ERROR).causedBy(err);
+        this.log.error(internalError);
+        this.emit('error', internalError);
+      }
+      if (_.isFunction(cb)) {
+        cb.call(this);
+      }
+    });
+  }
+
   /**
    * Ready callback when Nats connected
    */
@@ -431,28 +457,7 @@ export default class MostlyCore extends EventEmitter {
     });
     this._transport.driver.on('connect', () => {
       this.log.info(Constants.TRANSPORT_CONNECTED);
-
-      const each = (item, next) => {
-        if (item.register.length < 2) {
-          item.register(item.options);
-          return next();
-        }
-        item.register(item.options, next);
-      };
-
-      Util.serial(this._pluginRegistrations, each, (err) => {
-        if (err) {
-          if (err instanceof SuperError) {
-            err = err.rootCause || err.cause || err;
-          }
-          const internalError = new Errors.MostlyError(Constants.PLUGIN_REGISTRATION_ERROR).causedBy(err);
-          this.log.error(internalError);
-          this.emit('error', internalError);
-        }
-        if (_.isFunction(cb)) {
-          cb.call(this);
-        }
-      });
+      this.registerPlugins(this._pluginRegistrations, cb);
     });
   }
 

@@ -58,6 +58,7 @@ export default class Util {
     }
   }
 
+  
   /**
    * Executes a series of callbacks and allows to interrupt
    * as well as to continue with a final value
