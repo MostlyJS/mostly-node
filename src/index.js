@@ -32,7 +32,7 @@ const defaultConfig = {
   debug: false,
   generators: false,  // promise and generators support
   name: 'mostly-' + Util.randomId(), // node name
-  crashOnFatal: true, // Should gracefully exit the process at unhandled exceptions
+  crashOnFatal: true, // Should gracefully exit the process at unhandled exceptions or fatal errors
   logLevel: 'silent', // 'fatal', 'error', 'warn', 'info', 'debug', 'trace'; also 'silent'
   maxRecursion: 0,    // max recursive method calls
   errio: {
@@ -49,6 +49,7 @@ const defaultConfig = {
   },
   load: {
     checkPolicy: true,     // check on every request (server) if the load policy was observed
+    shouldCrash: true,     // should gracefully exit the process to recover from memory leaks or load, crashOnFatal must be enabled
     process: {
       sampleInterval: 0    // frequency of load sampling in milliseconds (zero is no sampling)
     },
