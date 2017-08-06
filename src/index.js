@@ -100,9 +100,7 @@ export default class MostlyCore extends EventEmitter {
     });
     this.trace$ = {};
     this.request$ = {
-      duration: 0,
       parentId: '',
-      timestamp: 0,
       type: Constants.REQUEST_TYPE_REQUEST,
       id: ''
     };
@@ -506,10 +504,6 @@ export default class MostlyCore extends EventEmitter {
       result: result.error ? null : result.payload,
       error: result.error ? Errio.toObject(result.error) : null
     };
-
-    let diffTime = Util.nowHrTime() - message.request.timestamp;
-    message.request.duration = diffTime;
-    message.trace.duration = diffTime;
 
     let m = this._encoder.encode.call(this, message);
 
