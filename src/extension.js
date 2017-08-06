@@ -1,5 +1,6 @@
 import _ from 'lodash';
 import Co from 'co';
+import Reply from './reply';
 import Util from './util';
 
 export default class Extension {
@@ -13,8 +14,8 @@ export default class Extension {
   _add (handler) {
     if (this._options.generators && Util.isGeneratorFunction(handler)) {
       this._stack.push(function () {
-        // -3 because (req, res, next, prevValue, index)
-        const next = arguments[arguments.length - 3];
+        // -1 because (req, res, next)
+        const next = arguments[arguments.length - 1];
         return Co(handler.apply(this, arguments)).then(x => next(null, x)).catch(next);
       });
     } else {
@@ -34,21 +35,24 @@ export default class Extension {
     this._stack = this._stack.concat(handlers);
   }
 
+  /*
+   * Executes the stack of callbacks and set the correct
+   * response and request context
+   */
   dispatch (ctx, cb) {
     const each = (item, next, prevValue, i) => {
       if (this._options.server) {
         const response = ctx._response;
         const request = ctx._request;
-        // pass next handler to response object so can abort with msg or error
-        response.next = next;
+        const reply = new Reply(request, response, next);
 
-        item.call(ctx, request, response, next, prevValue, i);
+        item.call(ctx, request, reply, next);
       } else {
-        item.call(ctx, next, i);
+        item.call(ctx, next);
       }
     };
 
-    Extension.serial(this._stack, each, cb);
+    Util.serialWithCancellation(this._stack, each, cb);
   }
 
   // unused function
@@ -83,6 +87,7 @@ export default class Extension {
     }
   }
 
+  // unused function
   static serial (array, method, callback) {
     if (!array.length) {
       callback();

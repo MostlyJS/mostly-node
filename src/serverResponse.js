@@ -6,29 +6,31 @@ export default class ServerResponse {
     this._response = {};
   }
 
-  end (value) {
-    if (value instanceof Error) {
-      if (_.isFunction(this.next)) {
-        this.next(value);
-      }
-    } else {
-      if (_.isFunction(this.next)) {
-        this.next(null, value, true);
-      }
-    }
-  }
+  // deprecated
+  // end (value) {
+  //   if (value instanceof Error) {
+  //     if (_.isFunction(this.next)) {
+  //       this.next(value);
+  //     }
+  //   } else {
+  //     if (_.isFunction(this.next)) {
+  //       this.next(null, value, true);
+  //     }
+  //   }
+  // }
 
-  send (value) {
-    if (value instanceof Error) {
-      if (_.isFunction(this.next)) {
-        this.next(value);
-      }
-    } else {
-      if (_.isFunction(this.next)) {
-        this.next(null, value);
-      }
-    }
-  }
+  // deprecated
+  // send (value) {
+  //   if (value instanceof Error) {
+  //     if (_.isFunction(this.next)) {
+  //       this.next(value);
+  //     }
+  //   } else {
+  //     if (_.isFunction(this.next)) {
+  //       this.next(null, value);
+  //     }
+  //   }
+  // }
 
   get payload () {
     return this._response.value;
