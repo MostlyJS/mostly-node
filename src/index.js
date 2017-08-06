@@ -1139,8 +1139,9 @@ export default class MostlyCore extends EventEmitter {
    * Close the process watcher and the underlying transort driver.
    */
   close() {
-    this._heavy.stop();
+    this.emit('close');
 
+    this._heavy.stop();
     return this._transport.close();
   }
 }
