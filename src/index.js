@@ -1143,7 +1143,7 @@ export default class MostlyCore extends EventEmitter {
   }
 
   removeAll () {
-    _.each(this._topics, (val, key) => this.remove(key));
+    _.each(this._topics, (_, topic) => this.remove(topic));
   }
 
   /**

@@ -1,4 +1,5 @@
 import _ from 'lodash';
+import Errors from './errors';
 
 export default class BeforeExit {
 
@@ -9,19 +10,23 @@ export default class BeforeExit {
 
   addAction (fn) {
     if (!_.isFunction(fn)) {
-      throw new Error('Expected a function but got a ' + typeof fn);
+      throw new Errors.MostlyError('Expected a function but got a ' + typeof fn);
     }
     this.actions.push(fn);
   }
 
   doActions (signal) {
-    Promise.all(this.actions.map(action => action(signal)))
-      .then(() => {
-        process.exit(0);
-      })
-      .catch(() => {
-        process.exit(1);
-      });
+    try {
+      Promise.all(this.actions.map(action => action(signal)))
+        .then(() => {
+          process.exit(0);
+        })
+        .catch(() => {
+          process.exit(1);
+        });
+    } catch (err) {
+      process.exit(1);
+    }
   }
 
   init () {
