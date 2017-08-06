@@ -1,4 +1,5 @@
 import _ from 'lodash';
+import Co from 'co';
 
 const lut = [];
 for (let i = 0; i < 256; i++) { lut[i] = (i < 16 ? '0' : '') + (i).toString(16); }
@@ -18,6 +19,31 @@ export default class Util {
     }
 
     return subject;
+  }
+
+  /**
+   * Convert a generator or async function
+   * to promise factory function and call the last
+   * argument as callback
+   *
+   * @static
+   * @param {any} handler
+   * @memberof Util
+   */
+  static toPromiseFact (handler) {
+    // -1 because (req, res, next)
+    const next = arguments[arguments.length - 1];
+    if (Util.isGeneratorFunction(handler)) {
+      return Co(handler.apply(this, arguments))
+        .then(x => next(null, x))
+        .catch(next);
+    } else if (Util.isAsyncFunction(handler)) {
+      return handler.apply(this, arguments)
+        .then(x => next(null, x))
+        .catch(next);
+    } else {
+      return handler;
+    }
   }
 
   // Fast ID generator: e7 https://jsperf.com/uuid-generator-opt/18
@@ -58,7 +84,7 @@ export default class Util {
     }
   }
 
-  
+
   /**
    * Executes a series of callbacks and allows to interrupt
    * as well as to continue with a final value

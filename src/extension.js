@@ -1,38 +1,16 @@
 import _ from 'lodash';
-import Co from 'co';
 import Reply from './reply';
 import Util from './util';
 
 export default class Extension {
 
-  constructor (type, options) {
+  constructor (type) {
     this._stack = [];
     this._type = type;
-    this._options = options;
   }
 
   _add (handler) {
-    const comp = () => {
-      // -1 because (req, res, next)
-      const next = arguments[arguments.length - 1];
-      if (Util.isGeneratorFunction(handler)) {
-        this._stack.push(function () {
-          return Co(handler.apply(this, arguments))
-            .then(x => next(null, x))
-            .catch(next);
-        });
-      } else if (Util.isAsyncFunction(handler)) {
-        this._stack.push(function () {
-          return handler.apply(this, arguments)
-            .then(x => next(null, x))
-            .catch(next);
-        });
-      } else {
-        this._stack.push(handler);
-      }
-    };
-
-    comp();
+    this._stack.push(Util.toPromiseFact(handler));
   }
 
   add (handler) {
@@ -53,7 +31,7 @@ export default class Extension {
    */
   dispatch (ctx, cb) {
     const each = (item, next, prevValue, i) => {
-      if (this._options.server) {
+      if (ctx._isServer) {
         const response = ctx._response;
         const request = ctx._request;
         const reply = new Reply(request, response, next);

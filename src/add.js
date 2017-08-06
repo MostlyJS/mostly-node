@@ -11,27 +11,7 @@ export default class Add {
   }
 
   _use (handler) {
-    const comp = () => {
-      // -1 because (req, res, next)
-      const next = arguments[arguments.length - 1];
-      if (Util.isGeneratorFunction(handler)) {
-        this.actMeta.middleware.push(function () {
-          return Co(handler.apply(this, arguments))
-            .then(x => next(null, x))
-            .catch(next);
-        });
-      } else if (Util.isAsyncFunction(handler)) {
-        this.actMeta.middleware.push(function () {
-          return handler.apply(this, arguments)
-            .then(x => next(null, x))
-            .catch(next);
-        });
-      } else {
-        this.actMeta.middleware.push(handler);
-      }
-    };
-
-    comp();
+    this.actMeta.middleware.push(Util.toPromiseFact(handler));
   }
 
   use (handler) {
@@ -66,20 +46,16 @@ export default class Add {
   }
 
   set action (action) {
-    const comp = () => {
-      if (Util.isGeneratorFunction(action)) {
-        this.actMeta.action = Co.wrap(action);
-        this.isPromisable = true;
-      } else if (Util.isAsyncFunction(action)) {
-        this.actMeta.action = action;
-        this.isPromisable = true;
-      } else {
-        this.actMeta.action = action;
-        this.isPromisable = false;
-      }
-    };
-
-    comp();
+    if (Util.isGeneratorFunction(action)) {
+      this.actMeta.action = Co.wrap(action);
+      this.isPromisable = true;
+    } else if (Util.isAsyncFunction(action)) {
+      this.actMeta.action = action;
+      this.isPromisable = true;
+    } else {
+      this.actMeta.action = action;
+      this.isPromisable = false;
+    }
   }
 
   get action () {
