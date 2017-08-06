@@ -71,7 +71,7 @@ const defaultConfig = {
 
 export default class MostlyCore extends EventEmitter {
 
-  constructor(transport, options) {
+  constructor (transport, options) {
     super();
 
     options = options || {};
@@ -209,28 +209,28 @@ export default class MostlyCore extends EventEmitter {
   /**
    * Return all registered plugins
    */
-  get plugins() {
+  get plugins () {
     return this._plugins;
   }
 
   /**
    * Return the bloomrun instance
    */
-  get router() {
+  get router () {
     return this._router;
   }
 
   /**
    * Return the heavy instance
    */
-  get load() {
+  get load () {
     return this._heavy.load;
   }
 
   /**
    * Return the shared object of all exposed data
    */
-  get exposition() {
+  get exposition () {
     return this._exposition;
   }
 
@@ -238,7 +238,7 @@ export default class MostlyCore extends EventEmitter {
    * Exposed data in context of the current plugin
    * It is accessible by this.expositions[<plugin>][<key>]
    */
-  expose(key, object) {
+  expose (key, object) {
     let pluginName = this.plugin$.attributes.name;
 
     if (!this._exposition[pluginName]) {
@@ -252,21 +252,21 @@ export default class MostlyCore extends EventEmitter {
   /**
    * Return the underlying NATS driver
    */
-  get transport() {
+  get transport () {
     return this._transport.driver;
   }
 
   /**
    * Return all registered topics
    */
-  get topics() {
+  get topics () {
     return this._topics;
   }
 
   /**
    * Add an extension. Extensions are called in serie
    */
-  ext(type, handler) {
+  ext (type, handler) {
     if (!this._extensions[type]) {
       let error = new Errors.MostlyError(Constants.INVALID_EXTENSION_TYPE, {
         type
@@ -281,7 +281,7 @@ export default class MostlyCore extends EventEmitter {
   /**
    * Use a plugin.
    */
-  use(params, options) {
+  use (params, options) {
     // use plugin infos from package.json
     if (_.isObject(params.attributes.pkg)) {
       params.attributes = params.attributes || {};
@@ -328,37 +328,32 @@ export default class MostlyCore extends EventEmitter {
    * Change the current plugin configuration
    * e.g to set the payload validator
    */
-  setOption(key, value) {
+  setOption (key, value) {
     this.plugin$.options[key] = value;
   }
 
   /**
    * Change the base configuration.
    */
-  setConfig(key, value) {
+  setConfig (key, value) {
     this._config[key] = value;
   }
 
-  get config() {
+  get config () {
     return this._config;
   }
 
   /**
    * Exit the process
    */
-  fatal() {
-    this.close();
-
-    // give nats driver chance to do rest work
-    setImmediate(() => {
-      process.exit(1);
-    });
+  fatal () {
+    this._beforeExit.doActions('fatal');
   }
 
   /**
    * Create a custom super error object without to start mostly
    */
-  static createError(name) {
+  static createError (name) {
     return SuperError.subclass(name);
   }
 
@@ -366,7 +361,7 @@ export default class MostlyCore extends EventEmitter {
    * Decorate the root instance with a method or other value
    * Value is globaly accesible
    */
-  decorate(prop, value) {
+  decorate (prop, value) {
     if (this._decorations[prop]) {
       this.emit('error', new Error(Constants.DECORATION_ALREADY_DEFINED));
     } else if (this[prop]) {
@@ -381,7 +376,7 @@ export default class MostlyCore extends EventEmitter {
   /**
    * Create a custom super error object in a running mostly instance
    */
-  createError(name) {
+  createError (name) {
     return SuperError.subclass(name);
   }
 
@@ -404,7 +399,7 @@ export default class MostlyCore extends EventEmitter {
   /**
    * Return all mostly errors
    */
-  static get errors() {
+  static get errors () {
     return Errors;
   }
 
@@ -437,7 +432,7 @@ export default class MostlyCore extends EventEmitter {
   /**
    * Ready callback when Nats connected
    */
-  ready(cb) {
+  ready (cb) {
     this._transport.driver.on('error', (error) => {
       this.log.error(error, Constants.TRANSPORT_ERROR);
       this.log.error('NATS Code: \'%s\', Message: %s', error.code, error.message);
@@ -465,7 +460,7 @@ export default class MostlyCore extends EventEmitter {
   /**
    * Ready callback when Nats connected
    */
-  onError(cb) {
+  onError (cb) {
     this._transport.driver.on('error', (e) => {
       this.log.info(Constants.TRANSPORT_ERROR);
       if (_.isFunction(cb)) {
@@ -477,7 +472,7 @@ export default class MostlyCore extends EventEmitter {
   /**
    * Build the final payload for the response
    */
-  _buildMessage() {
+  _buildMessage () {
     let result = this._response;
 
     let message = {
@@ -504,7 +499,7 @@ export default class MostlyCore extends EventEmitter {
     this._message = m.value;
   }
 
-  _onServerPreResponseHandler(err, value) {
+  _onServerPreResponseHandler (err, value) {
     const self = this;
 
     // check if an error was already wrapped
@@ -558,13 +553,13 @@ export default class MostlyCore extends EventEmitter {
    * Last step before the response is send to the callee.
    * The preResponse extension is dispatched and previous errors are evaluated.
    */
-  finish() {
+  finish () {
     this._extensions.onServerPreResponse.dispatch(this, (err, val) => {
       return this._onServerPreResponseHandler(err, val);
     });
   }
 
-  _actionHandler(err, resp) {
+  _actionHandler (err, resp) {
     const self = this;
 
     if (err) {
@@ -600,7 +595,7 @@ export default class MostlyCore extends EventEmitter {
     self.finish();
   }
 
-  _onServerPreHandler(err, value) {
+  _onServerPreHandler (err, value) {
     const self = this;
 
     if (err) {
@@ -658,7 +653,7 @@ export default class MostlyCore extends EventEmitter {
           action(self._request.payload.pattern, self._actionHandler.bind(self));
         }
       });
-    } catch(err) {
+    } catch (err) {
       if (err instanceof SuperError) {
         self._response.error = err.rootCause || err.cause || err;
       } else {
@@ -672,7 +667,7 @@ export default class MostlyCore extends EventEmitter {
     }
   }
 
-  _onServerPreRequestHandler(err, value) {
+  _onServerPreRequestHandler (err, value) {
     let self = this;
 
     if (err) {
@@ -710,7 +705,7 @@ export default class MostlyCore extends EventEmitter {
    * Attach one handler to the topic subscriber.
    * With subToMany and maxMessages you control NATS specific behaviour.
    */
-  subscribe(topic, subToMany, maxMessages, queue) {
+  subscribe (topic, subToMany, maxMessages, queue) {
     const self = this;
 
     // avoid duplicate subscribers of the emit stream
@@ -754,7 +749,7 @@ export default class MostlyCore extends EventEmitter {
   /**
    * Unsubscribe a topic or subscription id from NATS
    */
-  remove(topic, maxMessages) {
+  remove (topic, maxMessages) {
     const self = this;
 
     if (_.isNumber(topic)) {
@@ -776,7 +771,7 @@ export default class MostlyCore extends EventEmitter {
   /**
    * The topic is subscribed on NATS and can be called from any client.
    */
-  add(pattern, cb) {
+  add (pattern, cb) {
     // check for use quick syntax for JSON objects
     if (_.isString(pattern)) {
       pattern = TinySonic(pattern);
@@ -840,7 +835,7 @@ export default class MostlyCore extends EventEmitter {
     return addDefinition;
   }
 
-  _onClientPostRequestHandler(err) {
+  _onClientPostRequestHandler (err) {
     const self = this;
     // extension error
     if (err) {
@@ -875,7 +870,7 @@ export default class MostlyCore extends EventEmitter {
     self._execute(null, self._response.payload.result);
   }
 
-  _sendRequestHandler(response) {
+  _sendRequestHandler (response) {
     const self = this;
     const res = self._decoder.decode.call(self, response);
     self._response.payload = res.value;
@@ -915,7 +910,7 @@ export default class MostlyCore extends EventEmitter {
     }
   }
 
-  _onPreRequestHandler(err) {
+  _onPreRequestHandler (err) {
     const self = this;
 
     let m = self._encoder.encode.call(self, self._message);
@@ -1061,7 +1056,7 @@ export default class MostlyCore extends EventEmitter {
     return promise;
   }
 
-  _onClientTimeoutPostRequestHandler(err) {
+  _onClientTimeoutPostRequestHandler (err) {
     const self = this;
     if (err) {
       let error = null;
@@ -1106,7 +1101,7 @@ export default class MostlyCore extends EventEmitter {
    * - Service is actually still processing the request (service takes too long)
    * - Service was processing the request but crashed (service error)
    */
-  handleTimeout() {
+  handleTimeout () {
     const self = this;
     const timeout = self._pattern.timeout$ || this._config.timeout;
 
@@ -1127,7 +1122,7 @@ export default class MostlyCore extends EventEmitter {
    * Create new instance of mostly but with pointer on the previous propertys
    * so we are able to create a scope per act without lossing the reference to the core api.
    */
-  createContext() {
+  createContext () {
     const self = this;
 
     const ctx = Object.create(self);
@@ -1149,7 +1144,7 @@ export default class MostlyCore extends EventEmitter {
   /**
    * Close the process watcher and the underlying transort driver.
    */
-  close(cb) {
+  close (cb) {
     this._extensions.onClose.dispatch(this, (err, val) => {
       // no callback no queue processing
       if (!_.isFunction(cb)) {
@@ -1162,11 +1157,10 @@ export default class MostlyCore extends EventEmitter {
         return;
       }
 
-      // remove all active subscriptions
+      // unsubscribe all active subscriptions
       this.removeAll();
 
-      // Waiting before all queued messages was proceed
-      // and then close hemera and nats
+      // wait until the client has flush all messages to nats
       this._transport.flush(() => {
         this._heavy.stop();
         // close NATS
