@@ -84,7 +84,6 @@ export default class Util {
     }
   }
 
-
   /**
    * Executes a series of callbacks and allows to interrupt
    * as well as to continue with a final value
@@ -93,7 +92,7 @@ export default class Util {
    * @param {Function} method
    * @param {Function} callback
    */
-  static serialWithCancellation(array, method, callback) {
+  static serialWithCancellation (array, method, callback) {
     if (!array.length) {
       callback();
     } else {
@@ -128,7 +127,7 @@ export default class Util {
    */
   static nowHrTime () {
     const hrtime = process.hrtime();
-    return Math.floor(hrtime[0] * 1000000 + hrtime[1] / 1000);
+    return ((+hrtime[0]) * 1e9) + (+hrtime[1]);
   }
 
   static extractSchema (obj) {

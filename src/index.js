@@ -430,7 +430,7 @@ export default class MostlyCore extends EventEmitter {
       });
     };
 
-    // register all plugins
+    // register all plugins in serie
     Util.serial(plugins, each, (err) => {
       if (err) {
         if (err instanceof SuperError) {
@@ -507,9 +507,9 @@ export default class MostlyCore extends EventEmitter {
       error: result.error ? Errio.toObject(result.error) : null
     };
 
-    let endTime = Util.nowHrTime();
-    message.request.duration = endTime - message.request.timestamp;
-    message.trace.duration = endTime - message.request.timestamp;
+    let diffTime = Util.nowHrTime() - message.request.timestamp;
+    message.request.duration = diffTime;
+    message.trace.duration = diffTime;
 
     let m = this._encoder.encode.call(this, message);
 

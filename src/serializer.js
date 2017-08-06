@@ -1,7 +1,7 @@
 function inbound (ctx) {
   return {
     id: ctx.request$.id,
-    duration: ctx.request$.duration / 1000000,
+    duration: (ctx.request$.duration / 1e6).toFixed(2) + 'ms',
     pattern: ctx.request$.method
   };
 }
