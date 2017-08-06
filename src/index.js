@@ -311,20 +311,23 @@ export default class MostlyCore extends EventEmitter {
 
     // create new execution context
     let ctx = this.createContext();
-    ctx.plugin$ = {};
-    ctx.plugin$.register = params.plugin.bind(ctx);
-    ctx.plugin$.attributes = params.attributes || {};
-    ctx.plugin$.parentPluginName = this.plugin$.attributes.name;
-    ctx.plugin$.options = pluginOptions;
+
+    const plugin = new Plugin({
+      register: params.plugin.bind(ctx),
+      attributes: params.attributes,
+      parentPluginName: this.plugin$.attributes.name,
+      options: pluginOptions
+    });
+    ctx.plugin$ = plugin;
 
     if (ctx._config.childLogger) {
-      ctx.log = this.log.child({ plugin: params.attributes.name });
+      ctx.log = this.log.child({ plugin: plugin.attributes.name });
     }
 
-    this._pluginRegistrations.push(ctx.plugin$);
+    this._pluginRegistrations.push(plugin);
 
     this.log.info(params.attributes.name, Constants.PLUGIN_ADDED);
-    this._plugins[params.attributes.name] = ctx.plugin$;
+    this._plugins[params.attributes.name] = plugin;
   }
 
   /**
@@ -448,25 +451,32 @@ export default class MostlyCore extends EventEmitter {
    */
   ready (cb) {
     this._transport.driver.on('error', (error) => {
-      this.log.error(error, Constants.TRANSPORT_ERROR);
+      this.log.error(error, Constants.NATS_TRANSPORT_ERROR);
       this.log.error('NATS Code: \'%s\', Message: %s', error.code, error.message);
 
       // exit only on connection issues
       if (Constants.NATS_CONN_ERROR_CODES.indexOf(error.code) > -1) {
-        this.emit('error', error);
+        // No callback therefore only gracefully shutdown of mostly not NATS
+        this.close();
       }
     });
+    this._transport.driver.on('permission_error', (err) => {
+      this.log.error(err, Constants.NATS_PERMISSION_ERROR);
+    });
     this._transport.driver.on('reconnect', () => {
-      this.log.info(Constants.TRANSPORT_RECONNECTED);
+      this.log.info(Constants.NATS_TRANSPORT_RECONNECTED);
     });
     this._transport.driver.on('reconnecting', () => {
-      this.log.warn(Constants.TRANSPORT_RECONNECTING);
+      this.log.warn(Constants.NATS_TRANSPORT_RECONNECTING);
+    });
+    this._transport.driver.on('disconnect', () => {
+      this.log.warn(Constants.NATS_TRANSPORT_DISCONNECTED);
     });
     this._transport.driver.on('close', () => {
-      this.log.warn(Constants.TRANSPORT_CLOSED);
+      this.log.warn(Constants.NATS_TRANSPORT_CLOSED);
     });
     this._transport.driver.on('connect', () => {
-      this.log.info(Constants.TRANSPORT_CONNECTED);
+      this.log.info(Constants.NATS_TRANSPORT_CONNECTED);
       this.registerPlugins(this._pluginRegistrations, cb);
     });
   }

@@ -4,16 +4,18 @@ module.exports = {
   NATS_QUEUEGROUP_PREFIX: 'queue',
   // NATS error codes
   NATS_CONN_ERROR_CODES: ['CONN_ERR', 'SECURE_CONN_REQ_MSG', 'NON_SECURE_CONN_REQ_MSG', 'CLIENT_CERT_REQ_MSG'],
+  // NATS erros
+  NATS_TRANSPORT_ERROR: 'Could not connect to NATS!',
+  NATS_TRANSPORT_CLOSED: 'NATS connection closed!',
+  NATS_TRANSPORT_CONNECTED: 'NATS connected!',
+  NATS_PERMISSION_ERROR: 'NATS permission error',
+  NATS_TRANSPORT_RECONNECTING: 'NATS reconnecting ...',
+  NATS_TRANSPORT_RECONNECTED: 'NATS reconnected!',
+  NATS_TRANSPORT_DISCONNECTED: 'NATS disconnected!',
   // Request types
   REQUEST_TYPE_PUBSUB: 'pubsub',
   REQUEST_TYPE_REQUEST: 'request',
-  // Errors messages
-  TRANSPORT_ERROR: 'Could not connect to NATS!',
-  TRANSPORT_CLOSED: 'NATS connection closed!',
-  TRANSPORT_CONNECTED: 'NATS connected!',
-  TRANSPORT_RECONNECTING: 'NATS reconnecting ...',
-  TRANSPORT_RECONNECTED: 'NATS reconnected!',
-
+  // Application errors
   JSON_PARSE_ERROR: 'Invalid JSON payload',
   ACT_TIMEOUT_ERROR: 'Timeout',
   NO_TOPIC_TO_SUBSCRIBE: 'No topic to subscribe',
