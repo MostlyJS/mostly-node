@@ -774,33 +774,32 @@ export default class MostlyCore extends EventEmitter {
   }
 
   /**
-   * Unsubscribe a pattern or subscription id from NATS
+   * Unsubscribe a topic or subscription id from NATS
    */
-  remove (pattern, maxMessages) {
+  remove (topic, maxMessages) {
     const self = this;
 
-    if (_.isString(pattern)) {
-      pattern = TinySonic(pattern);
+    if (!topic) {
+      let error = new Errors.MostlyError(Constants.TOPIC_SID_REQUIRED_FOR_DELETION);
+      self.log.error(error);
+      throw error;
     }
 
-    if (_.isNumber(pattern)) {
-      self._transport.unsubscribe(pattern, maxMessages);
+    if (_.isNumber(topic)) {
+      self._transport.unsubscribe(topic, maxMessages);
       return true;
     } else {
-      // topic is needed to unsubscribe on NATS and remove pattern from index
-      if (!pattern.topic) {
-        let error = new Errors.MostlyError(Constants.TOPIC_REQUIRED_FOR_REMOVING);
-        this.log.error(error);
-        throw error;
-      }
-
-      const subId = self._topics[pattern.topic];
+      const subId = self._topics[topic];
       if (subId) {
         self._transport.unsubscribe(subId, maxMessages);
         // release topic so we can add it again
-        delete self._topics[pattern.topic];
-        // remove pattern from index
-        self.router.remove(pattern);
+        delete self._topics[topic];
+        // remove pattern which belongs to the topic
+        _.each(this.list(), action => {
+          if (action.pattern.topic === topic) {
+            this.router.remove(action.pattern);
+          }
+        });
         return true;
       }
     }
@@ -1177,7 +1176,7 @@ export default class MostlyCore extends EventEmitter {
    * Remove all registered pattern and release topic from NATS
    */
   removeAll () {
-    _.each(this.list(), (val) => this.remove(val.pattern));
+    _.each(this._topics, (_, topic) => this.remove(topic));
   }
 
   /**
