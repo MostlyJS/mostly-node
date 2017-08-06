@@ -11,6 +11,7 @@ import Co from 'co';
 import makeDebug from 'debug';
 
 import Errors from './errors';
+import CircuitBreaker from './circuitBreaker';
 import Constants from './constants';
 import Extension from './extension';
 import Util from './util';
@@ -33,30 +34,37 @@ const defaultConfig = {
   generators: false,  // promise and generators support
   name: 'mostly-' + Util.randomId(), // node name
   crashOnFatal: true, // Should gracefully exit the process at unhandled exceptions
-  logLevel: 'silent',
-  maxRecursion: 0,   // Max recursive method calls
+  logLevel: 'silent', // 'fatal', 'error', 'warn', 'info', 'debug', 'trace'; also 'silent'
+  maxRecursion: 0,    // max recursive method calls
   errio: {
-    recursive: true, // Recursively serialize and deserialize nested errors
-    inherited: true, // Include inherited properties
-    stack: true,     // Include stack property
-    private: false,  // Include properties with leading or trailing underscores
-    exclude: [],     // Property names to exclude (low priority)
-    include: []      // Property names to include (high priority)
+    recursive: true, // recursively serialize and deserialize nested errors
+    inherited: true, // include inherited properties
+    stack: true,     // include stack property
+    private: false,  // include properties with leading or trailing underscores
+    exclude: [],     // property names to exclude (low priority)
+    include: []      // property names to include (high priority)
   },
   bloomrun: {
-    indexing: 'inserting', // Pattern indexing method "inserting" or "depth"
-    lookupBeforeAdd: true  // Should throw an error when pattern matched with existign set
+    indexing: 'inserting', // pattern indexing method "inserting" or "depth"
+    lookupBeforeAdd: true  // checks if the pattern is no duplicate based on to the indexing strategy
   },
   load: {
-    checkPolicy: true,
+    checkPolicy: true,     // check on every request (server) if the load policy was observed
     process: {
-      sampleInterval: 0    // Frequency of load sampling in milliseconds (zero is no sampling)
+      sampleInterval: 0    // frequency of load sampling in milliseconds (zero is no sampling)
     },
     policy: {
-      maxHeapUsedBytes: 0, // Reject requests when V8 heap is over size in bytes (zero is no max)
-      maxRssBytes: 0,      // Reject requests when process RSS is over size in bytes (zero is no max)
-      maxEventLoopDelay: 0 // Milliseconds of delay after which requests are rejected (zero is no max)
+      maxHeapUsedBytes: 0, // reject requests when V8 heap is over size in bytes (zero is no max)
+      maxRssBytes: 0,      // reject requests when process RSS is over size in bytes (zero is no max)
+      maxEventLoopDelay: 0 // milliseconds of delay after which requests are rejected (zero is no max)
     }
+  },
+  circuitBreaker: {
+    enabled: false,
+    minSuccesses: 1,        // minimum successes in the half-open state to change to close state
+    halfOpenTime: 5 * 1000, // the duration when the server is ready to accept further calls after changing to open state
+    resetIntervalTime: 15 * 1000, // frequency of reseting the circuit breaker to close state in milliseconds
+    maxFailures: 3          // the threshold when the circuit breaker change to open state
   }
 };
 
@@ -382,7 +390,7 @@ export default class MostlyCore extends EventEmitter {
       return {
         app: this._config.name,
         isServer: this._isServer,
-        pattern: this._actMeta ? this._actMeta.pattern : false // PatternNotFound
+        pattern: this._actMeta ? this._actMeta.pattern : false // when pattern could not be found
       };
     } else {
       return {
@@ -501,9 +509,16 @@ export default class MostlyCore extends EventEmitter {
 
       // check if an error was already wrapped
       if (self._response.error) {
+        // don't handle circuit breaker error as failure
+        if (self._config.circuitBreaker.enabled && !(self._response.error instanceof Errors.CircuitBreakerError)) {
+          self._circuitBreaker.failure();
+        }
         self.emit('serverResponseError', self._response.error);
         self.log.error(self._response.error);
       } else if (err) { // check for an extension error
+        if (self._config.circuitBreaker.enabled) {
+          self._circuitBreaker.failure();
+        }
         if (err instanceof SuperError) {
           self._response.error = err.rootCause || err.cause || err;
         } else {
@@ -514,6 +529,8 @@ export default class MostlyCore extends EventEmitter {
         self.log.error(internalError);
 
         self.emit('serverResponseError', self._response.error);
+      } else if (self._config.circuitBreaker.enabled) {
+        self._circuitBreaker.success();
       }
 
       // reply value from extension
@@ -678,7 +695,24 @@ export default class MostlyCore extends EventEmitter {
     function onServerPreRequestHandler(err, value) {
       let self = this;
 
+      // icnoming pattern
       self._pattern = self._request.payload.pattern;
+
+      // find matched route
+      self._actMeta = self._router.lookup(self._pattern);
+
+      if (self._config.circuitBreaker.enabled && self._actMeta) {
+        // get circuit breaker of server method
+        self._circuitBreaker = self._actMeta.actMeta.circuitBreaker;
+        if (!self._circuitBreaker.available()) {
+          // trigger halp-open timer
+          self._circuitBreaker.failure();
+          self._response.error = new Errors.CircuitBreakerError(
+            `Circuit breaker is ${self._circuitBreaker.state}`,
+            { state: self._circuitBreaker.state });
+          return self.finish();
+        }
+      }
 
       if (err) {
         if (err instanceof SuperError) {
@@ -695,9 +729,6 @@ export default class MostlyCore extends EventEmitter {
         self._response.payload = value;
         return self.finish();
       }
-
-      // find matched route
-      self._actMeta = self._router.lookup(self._pattern);
 
       // check if a handler is registered with this pattern
       if (self._actMeta) {
@@ -722,6 +753,7 @@ export default class MostlyCore extends EventEmitter {
       ctx._pattern = {};
       ctx._actMeta = {};
       ctx._isServer = true;
+      ctx._circuitBreaker = null;
 
       ctx._extensions.onServerPreRequest.dispatch(ctx, onServerPreRequestHandler);
     };
@@ -780,16 +812,26 @@ export default class MostlyCore extends EventEmitter {
     let schema = Util.extractSchema(origPattern);
     origPattern = Util.cleanPattern(origPattern);
 
-    // create message object which represent the object behind the matched pattern
-    let actMeta = new Add({
+    let actMeta = {
       schema: schema,
       pattern: origPattern,
       plugin: this.plugin$
-    }, { generators: this._config.generators });
+    };
+
+    // only create object when circuit breaker is enabled
+    const circuitBreakerConfig = pattern.circuitBreaker$ || this._config.circuitBreaker;
+    if (circuitBreakerConfig.enabled) {
+      let circuitBreaker = new CircuitBreaker(circuitBreakerConfig);
+      circuitBreaker.on('stateChange', (state) => this.emit('circuit-breaker.stateChange', state));
+      actMeta.circuitBreaker = circuitBreaker;
+    }
+
+    // create message object which represent the object behind the matched pattern
+    let addDefinition = new Add(actMeta, { generators: this._config.generators });
 
     // set callback
     if (cb) { // cb is null when use chaining syntax
-      actMeta.action = cb;
+      addDefinition.action = cb;
     }
 
     let handler = this._router.lookup(origPattern);
@@ -806,14 +848,14 @@ export default class MostlyCore extends EventEmitter {
     }
 
     // add to bloomrun
-    this._router.add(origPattern, actMeta);
+    this._router.add(origPattern, addDefinition);
 
     this.log.info(origPattern, Constants.ADD_ADDED);
 
     // subscribe on topic
     this.subscribe(pattern.topic, pattern.pubsub$, pattern.maxMessages$);
 
-    return actMeta;
+    return addDefinition;
   }
 
   /**
