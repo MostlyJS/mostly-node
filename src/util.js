@@ -146,14 +146,17 @@ export default class Util {
     return sb.join(',');
   }
 
-  static isGenerator (obj) {
-    return typeof obj.next === 'function' && typeof obj.throw === 'function';
-  }
-
   static isGeneratorFunction (obj) {
     var constructor = obj.constructor;
     if (!constructor) return false;
     if (constructor.name === 'GeneratorFunction' || constructor.displayName === 'GeneratorFunction') return true;
-    return Util.isGenerator(constructor.prototype);
+    return false;
+  }
+
+  static isAsyncFunction (obj) {
+    var constructor = obj.constructor;
+    if (!constructor) return false;
+    if (constructor.name === 'AsyncFunction' || constructor.displayName === 'AsyncFunction') return true;
+    return false;
   }
 }

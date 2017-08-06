@@ -30,7 +30,6 @@ const debug = makeDebug('mostly:core');
 
 const defaultConfig = {
   timeout: 2000, // max execution time of a request
-  generators: false,  // promise and generators support
   tag: '',            // The tag string of this mostly instance
   name: `node-${Os.hostname()}-${Util.randomId()}`, // node name
   crashOnFatal: true, // Should gracefully exit the process at unhandled exceptions or fatal errors
@@ -137,12 +136,12 @@ export default class MostlyCore extends EventEmitter {
 
     // define extension points
     this._extensions = {
-      onClientPreRequest: new Extension('onClientPreRequest', { server: false, generators: this._config.generators }),
-      onClientPostRequest: new Extension('onClientPostRequest', { server: false, generators: this._config.generators }),
-      onServerPreHandler: new Extension('onServerPreHandler', { server: true, generators: this._config.generators }),
-      onServerPreRequest: new Extension('onServerPreRequest', { server: true, generators: this._config.generators }),
-      onServerPreResponse: new Extension('onServerPreResponse', { server: true, generators: this._config.generators }),
-      onClose: new Extension('onClose', { server: false, generators: this._config.generators })
+      onClientPreRequest: new Extension('onClientPreRequest', { server: false }),
+      onClientPostRequest: new Extension('onClientPostRequest', { server: false }),
+      onServerPreHandler: new Extension('onServerPreHandler', { server: true }),
+      onServerPreRequest: new Extension('onServerPreRequest', { server: true }),
+      onServerPreResponse: new Extension('onServerPreResponse', { server: true }),
+      onClose: new Extension('onClose', { server: false })
     };
 
     // errio settings
@@ -645,7 +644,7 @@ export default class MostlyCore extends EventEmitter {
         }
 
         // execute RPC action
-        if (self._config.generators && self._actMeta.isGenFunc) {
+        if (self._actMeta.isPromisable) {
           action(self._request.payload.pattern)
             .then(x => self._actionHandler(null, x))
             .catch(e => self._actionHandler(e));
@@ -797,7 +796,7 @@ export default class MostlyCore extends EventEmitter {
     };
 
     // create message object which represent the object behind the matched pattern
-    let addDefinition = new Add(actMeta, { generators: this._config.generators });
+    let addDefinition = new Add(actMeta);
 
     // set callback
     if (cb) { // cb is null when use chaining syntax
@@ -988,6 +987,7 @@ export default class MostlyCore extends EventEmitter {
     ctx._isServer = false;
     ctx._execute = null;
     ctx._hasCallback = false;
+    ctx._isPromisable = false;
 
     // topic is needed to subscribe on a subject in NATS
     if (!pattern.topic) {
@@ -1001,41 +1001,19 @@ export default class MostlyCore extends EventEmitter {
 
     if (cb) {
       ctx._hasCallback = true;
-      if (this._config.generators) {
+      if (Util.isGeneratorFunction(cb)) {
         ctx._actCallback = Co.wrap(cb.bind(ctx));
+        ctx._isPromisable = true;
+      } else if (Util.isAsyncFunction(cb)) {
+        ctx._actCallback = cb.bind(ctx);
+        ctx._isPromisable = true;        
       } else {
         ctx._actCallback = cb.bind(ctx);
+        ctx._isPromisable = false;        
       }
     }
     
-    // dont return promise when generators is set to false
-    if (this._config.generators) {
-      const promise = new Promise((resolve, reject) => {
-        ctx._execute = (err, result) => {
-          if (ctx._config.circuitBreaker.enabled) {
-            const circuitBreaker = ctx._circuitBreakerMap.get(ctx.trace$.method);
-            if (err) {
-              circuitBreaker.failure();
-            } else {
-              circuitBreaker.success();
-            }
-          }
-
-          if (ctx._hasCallback) {
-            ctx._actCallback(err, result).then(x => resolve(x)).catch(x => reject(x));
-          } else {
-            if (err) {
-              reject(err);
-            } else {
-              resolve(result);
-            }
-          }
-        };
-      });
-      
-      ctx._extensions.onClientPreRequest.dispatch(ctx, (err) => ctx._onPreRequestHandler(err));
-      return promise;
-    } else {
+    const promise = new Promise((resolve, reject) => {
       ctx._execute = (err, result) => {
         if (ctx._config.circuitBreaker.enabled) {
           const circuitBreaker = ctx._circuitBreakerMap.get(ctx.trace$.method);
@@ -1045,12 +1023,32 @@ export default class MostlyCore extends EventEmitter {
             circuitBreaker.success();
           }
         }
+
         if (ctx._hasCallback) {
-          ctx._actCallback(err, result);
+          if (ctx._isPromisable) {
+            ctx._actCallback(err, result)
+              .then(x => resolve(x))
+              .catch(x => reject(x));
+          } else {
+            const r = ctx._actCallback(err, result);
+            if (r instanceof Error) {
+              reject(r);
+            } else {
+              resolve(r);
+            }
+          }
+        } else {
+          if (err) {
+            reject(err);
+          } else {
+            resolve(result);
+          }
         }
       };
-      ctx._extensions.onClientPreRequest.dispatch(ctx, (err) => ctx._onPreRequestHandler(err));
-    }
+    });
+    
+    ctx._extensions.onClientPreRequest.dispatch(ctx, (err) => ctx._onPreRequestHandler(err));
+    return promise;
   }
 
   _onClientTimeoutPostRequestHandler(err) {

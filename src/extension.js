@@ -12,17 +12,27 @@ export default class Extension {
   }
 
   _add (handler) {
-    if (this._options.generators && Util.isGeneratorFunction(handler)) {
-      this._stack.push(function () {
-        // -1 because (req, res, next)
-        const next = arguments[arguments.length - 1];
-        return Co(handler.apply(this, arguments))
-          .then(x => next(null, x))
-          .catch(next);
-      });
-    } else {
-      this._stack.push(handler);
-    }
+    const comp = () => {
+      // -1 because (req, res, next)
+      const next = arguments[arguments.length - 1];
+      if (Util.isGeneratorFunction(handler)) {
+        this._stack.push(function () {
+          return Co(handler.apply(this, arguments))
+            .then(x => next(null, x))
+            .catch(next);
+        });
+      } else if (Util.isAsyncFunction(handler)) {
+        this._stack.push(function () {
+          return handler.apply(this, arguments)
+            .then(x => next(null, x))
+            .catch(next);
+        });
+      } else {
+        this._stack.push(handler);
+      }
+    };
+
+    comp();
   }
 
   add (handler) {
