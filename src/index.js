@@ -34,6 +34,7 @@ const defaultConfig = {
   name: 'mostly-' + Util.randomId(), // node name
   crashOnFatal: true, // Should gracefully exit the process at unhandled exceptions or fatal errors
   logLevel: 'silent', // 'fatal', 'error', 'warn', 'info', 'debug', 'trace'; also 'silent'
+  childLogger: false, // create a child logger per section / plugin. Only possible with default logger Pino.
   maxRecursion: 0,    // max recursive method calls
   errio: {
     recursive: true, // recursively serialize and deserialize nested errors
@@ -320,6 +321,10 @@ export default class MostlyCore extends EventEmitter {
     ctx.plugin$.attributes.dependencies = params.attributes.dependencies || [];
     ctx.plugin$.parentPlugin = this.plugin$.attributes.name;
     ctx.plugin$.options = params.options || {};
+
+    if (ctx._config.childLogger) {
+      ctx.log = this.log.child({ plugin: params.attributes.name });
+    }
 
     this._pluginRegistrations.push(ctx.plugin$);
 
