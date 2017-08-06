@@ -24,6 +24,7 @@ import ServerRequest from './serverRequest';
 import ClientRequest from './clientRequest';
 import ClientResponse from './clientResponse';
 import Serializers from './serializer';
+import CodecPipeline from './codecPipeline';
 import Add from './add';
 import Plugin from './plugin';
 
@@ -128,12 +129,8 @@ export default class MostlyCore extends EventEmitter {
       core: this.plugin$
     };
 
-    this._encoder = {
-      encode: DefaultEncoder.encode
-    };
-    this._decoder = {
-      decode: DefaultDecoder.decode
-    };
+    this._encoderPipeline = new CodecPipeline().add(DefaultEncoder.encode);
+    this._decoderPipeline = new CodecPipeline().add(DefaultDecoder.decode);
 
     // define extension points
     this._extensions = {
@@ -213,6 +210,20 @@ export default class MostlyCore extends EventEmitter {
     });
 
     this._beforeExit.init();
+  }
+
+  /**
+   * Return the decoder pipeline
+   */
+  get decoder () {
+    return this._decoderPipeline;
+  }
+
+  /**
+   * Return the encoder pipeline
+   */
+  get encoder () {
+    return this._encoderPipeline;
   }
 
   /**
@@ -514,12 +525,18 @@ export default class MostlyCore extends EventEmitter {
       error: result.error ? Errio.toObject(result.error) : null
     };
 
-    let m = this._encoder.encode.call(this, message);
+    let m = this._encoderPipeline.run(message, this);
 
     // attach encoding issues
     if (m.error) {
-      message.error = Errio.toObject(m.error);
+      let internalError = new Errors.ParseError(Constants.PAYLOAD_PARSING_ERROR).causedBy(m.error);
+      message.error = Errio.toObject(internalError);
       message.result = null;
+
+      // Retry to encode with issue perhaps the cause was data related
+      m = this._encoderPipeline.run(message, this);
+      this.log.error(internalError);
+      this.emit('serverResponseError', m.error);
     }
 
     // final response
@@ -914,7 +931,7 @@ export default class MostlyCore extends EventEmitter {
 
   _sendRequestHandler (response) {
     const self = this;
-    const res = self._decoder.decode.call(self, response);
+    const res = self._decoderPipeline.run(response, self);
     self._response.payload = res.value;
     self._response.error = res.error;
 
@@ -955,7 +972,7 @@ export default class MostlyCore extends EventEmitter {
   _onPreRequestHandler (err) {
     const self = this;
 
-    let m = self._encoder.encode.call(self, self._message);
+    let m = self._encoderPipeline.run(self._message, self);
 
     // encoding issue
     if (m.error) {
