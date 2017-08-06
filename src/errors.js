@@ -11,6 +11,7 @@ const PatternNotFound = MostlyError.subclass('PatternNotFound');
 const MaxRecursionError = MostlyError.subclass('MaxRecursionError');
 const PayloadValidationError = MostlyError.subclass('PayloadValidationError');
 const CircuitBreakerError = MostlyError.subclass('CircuitBreakerError');
+const PluginTimeoutError = MostlyError.subclass('PluginTimeoutError');
 
 module.exports = {
   MostlyError,
@@ -23,5 +24,6 @@ module.exports = {
   FatalError,
   PatternNotFound,
   PayloadValidationError,
-  CircuitBreakerError
+  CircuitBreakerError,
+  PluginTimeoutError
 };

@@ -29,7 +29,8 @@ import Add from './add';
 const debug = makeDebug('mostly:core');
 
 const defaultConfig = {
-  timeout: 2000, // max execution time of a request
+  timeout: 2000,      // max execution time of a request
+  pluginTimeout: 3000,// max intialization time for a plugin
   tag: '',            // The tag string of this mostly instance
   name: `node-${Os.hostname()}-${Util.randomId()}`, // node name
   crashOnFatal: true, // Should gracefully exit the process at unhandled exceptions or fatal errors
@@ -304,6 +305,7 @@ export default class MostlyCore extends EventEmitter {
       let error = new Errors.MostlyError(Constants.PLUGIN_NAME_REQUIRED);
       this.log.error(error);
       this.emit('error', error);
+      return;
     }
 
     // create new execution context
@@ -410,7 +412,18 @@ export default class MostlyCore extends EventEmitter {
         item.register(item.options);
         return next();
       }
-      item.register(item.options, next);
+
+      // Detect plugin timeouts
+      const pluginTimer = setTimeout(() => {
+        const internalError = new Errors.PluginTimeoutError(Constants.PLUGIN_TIMEOUT_ERROR);
+        this.log.error(internalError, `Plugin: ${item.attributes.name}`);
+        next(internalError);
+      }, this._config.pluginTimeout);
+
+      item.register(item.options, (err) => {
+        clearTimeout(pluginTimer);
+        next(err);
+      });
     };
 
     // register all plugins
@@ -815,12 +828,8 @@ export default class MostlyCore extends EventEmitter {
 
     // check if pattern is already registered
     if (this._config.bloomrun.lookupBeforeAdd && handler) {
-      let error = new Errors.MostlyError(Constants.PATTERN_ALREADY_IN_USE, {
-        pattern,
-        app: this._config.name
-      });
-
-      this.log.error(error);
+      let error = new Errors.MostlyError(Constants.PATTERN_ALREADY_IN_USE, { pattern });
+      this.log.error({ pattern }, error);
       this.emit('error', error);
     }
 
