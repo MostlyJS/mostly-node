@@ -141,7 +141,8 @@ export default class MostlyCore extends EventEmitter {
       onClientPostRequest: new Extension('onClientPostRequest', { server: false, generators: this._config.generators }),
       onServerPreHandler: new Extension('onServerPreHandler', { server: true, generators: this._config.generators }),
       onServerPreRequest: new Extension('onServerPreRequest', { server: true, generators: this._config.generators }),
-      onServerPreResponse: new Extension('onServerPreResponse', { server: true, generators: this._config.generators })
+      onServerPreResponse: new Extension('onServerPreResponse', { server: true, generators: this._config.generators }),
+      onClose: new Extension('onClose', { server: false, generators: this._config.generators })
     };
 
     // errio settings
@@ -188,11 +189,16 @@ export default class MostlyCore extends EventEmitter {
 
     // no matter how a process exits log and fire event
     OnExit((code, signal) => {
+      // Signal 0 checks if any process with the given PID is running
+      if (code === 0) {
+        return;
+      }
+
       this.log.fatal({
         code,
         signal
       }, 'process exited');
-      this.emit('teardown', {
+      this.emit('exit', {
         code,
         signal
       });
@@ -1136,9 +1142,14 @@ export default class MostlyCore extends EventEmitter {
    * Close the process watcher and the underlying transort driver.
    */
   close() {
-    this.emit('close');
-
-    this._heavy.stop();
-    return this._transport.close();
+    this._extensions.onClose.dispatch(this, (err, val) => {
+      this._heavy.stop();
+      this._transport.close();
+      
+      if (err) {
+        this.log.fatal(err);
+        this.emit('error', err);
+      }
+    });
   }
 }
