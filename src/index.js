@@ -180,7 +180,7 @@ export default class MostlyCore extends EventEmitter {
           level: this._config.logLevel,
           serializers: Serializers
         });
-        
+
         // Leads to too much listeners in tests
         if (this._config.logLevel !== 'silent') {
           pretty.pipe(process.stdout);
@@ -774,20 +774,33 @@ export default class MostlyCore extends EventEmitter {
   }
 
   /**
-   * Unsubscribe a topic or subscription id from NATS
+   * Unsubscribe a pattern or subscription id from NATS
    */
-  remove (topic, maxMessages) {
+  remove (pattern, maxMessages) {
     const self = this;
 
-    if (_.isNumber(topic)) {
-      self._transport.unsubscribe(topic, maxMessages);
+    if (_.isString(pattern)) {
+      pattern = TinySonic(pattern);
+    }
+
+    if (_.isNumber(pattern)) {
+      self._transport.unsubscribe(pattern, maxMessages);
       return true;
-    } else if (_.isString(topic)) {
-      const subId = self._topics[topic];
+    } else {
+      // topic is needed to unsubscribe on NATS and remove pattern from index
+      if (!pattern.topic) {
+        let error = new Errors.MostlyError(Constants.TOPIC_REQUIRED_FOR_REMOVING);
+        this.log.error(error);
+        throw error;
+      }
+
+      const subId = self._topics[pattern.topic];
       if (subId) {
         self._transport.unsubscribe(subId, maxMessages);
-        // release topic
-        delete self._topics[topic];
+        // release topic so we can add it again
+        delete self._topics[pattern.topic];
+        // remove pattern from index
+        self.router.remove(pattern);
         return true;
       }
     }
@@ -1160,8 +1173,11 @@ export default class MostlyCore extends EventEmitter {
     return this._router.list(pattern, options);
   }
 
+  /**
+   * Remove all registered pattern and release topic from NATS
+   */
   removeAll () {
-    _.each(this._topics, (_, topic) => this.remove(topic));
+    _.each(this.list(), (val) => this.remove(val.pattern));
   }
 
   /**

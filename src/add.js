@@ -7,6 +7,7 @@ export default class Add {
   constructor (actMeta, options) {
     this.actMeta = actMeta;
     this.options = options;
+    this.isPromisable = false;
     this.actMeta.middleware = actMeta.middleware || [];
   }
 
