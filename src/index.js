@@ -792,19 +792,26 @@ export default class MostlyCore extends EventEmitter {
       const subId = self._topics[topic];
       if (subId) {
         self._transport.unsubscribe(subId, maxMessages);
-        // release topic so we can add it again
-        delete self._topics[topic];
-        // remove pattern which belongs to the topic
-        _.each(this.list(), action => {
-          if (action.pattern.topic === topic) {
-            this.router.remove(action.pattern);
-          }
-        });
+        this.cleanTopic(topic);
         return true;
       }
     }
 
     return false;
+  }
+
+  /**
+   * Remove topic from list and clean pattern index of topic
+   */
+  cleanTopic (topic) {
+    // release topic so we can add it again
+    delete this._topics[topic];
+    // remove pattern which belongs to the topic
+    _.each(this.list(), add => {
+      if (add.pattern.topic === topic) {
+        this.router.remove(add.pattern);
+      }
+    });
   }
 
   /**
@@ -1154,7 +1161,7 @@ export default class MostlyCore extends EventEmitter {
   }
 
   /**
-   * Create new instance of mostly but with pointer on the previous propertys
+   * Create new instance of mostly but but based on the current prototype
    * so we are able to create a scope per act without lossing the reference to the core api.
    */
   createContext () {
@@ -1180,7 +1187,8 @@ export default class MostlyCore extends EventEmitter {
   }
 
   /**
-   * Close the process watcher and the underlying transort driver.
+   * Gracefully shutdown of all resources.
+   * Unsubscribe all subscriptiuons and close the underlying NATS connection
    */
   close (cb) {
     this._extensions.onClose.dispatch(this, (err, val) => {
@@ -1205,7 +1213,7 @@ export default class MostlyCore extends EventEmitter {
         this._transport.close();
 
         if (err) {
-          this.log.fatal(err);
+          this.log.error(err);
           this.emit('error', err);
           if (_.isFunction(cb)) {
             cb(err);
