@@ -157,13 +157,13 @@ export default class MostlyCore extends EventEmitter {
 
     // will be executed before the client request is executed.
     this._extensions.onClientPreRequest.add(DefaultExtensions.onClientPreRequest);
-    // will be executed after the client received and decoded the request
+    // will be executed after the client has received and decoded the request
     this._extensions.onClientPostRequest.add(DefaultExtensions.onClientPostRequest);
-    // will be executed before the server received the requests
+    // will be executed before the server has received the requests
     this._extensions.onServerPreRequest.add(DefaultExtensions.onServerPreRequest);
     // will be executed before the server action is executed
     this._extensions.onServerPreHandler.add(DefaultExtensions.onServerPreHandler);
-    // will be executed before the server reply the response and build the message
+    // will be executed before the server has replied the response and build the message
     this._extensions.onServerPreResponse.add(DefaultExtensions.onServerPreResponse);
 
     // use own logger
@@ -256,6 +256,47 @@ export default class MostlyCore extends EventEmitter {
   }
 
   /**
+   * Return the underlying NATS driver
+   */
+  get transport () {
+    return this._transport.driver;
+  }
+
+  /**
+   * Return all registered topics
+   */
+  get topics () {
+    return this._topics;
+  }
+
+  get config () {
+    return this._config;
+  }
+
+  get errorDetails () {
+    if (this._isServer) {
+      return {
+        app: this._config.name,
+        isServer: this._isServer,
+        pattern: this.trace$.method
+      };
+    } else {
+      return {
+        app: this._config.name,
+        isServer: this._isServer,
+        pattern: this.trace$.method
+      };
+    }
+  }
+  
+  /**
+   * Return all mostly errors
+   */
+  static get errors () {
+    return Errors;
+  }
+
+  /**
    * Exposed data in context of the current plugin
    * It is accessible by this.expositions[<plugin>][<key>]
    */
@@ -268,20 +309,6 @@ export default class MostlyCore extends EventEmitter {
     } else {
       this._exposition[pluginName][key] = object;
     }
-  }
-
-  /**
-   * Return the underlying NATS driver
-   */
-  get transport () {
-    return this._transport.driver;
-  }
-
-  /**
-   * Return all registered topics
-   */
-  get topics () {
-    return this._topics;
   }
 
   /**
@@ -364,10 +391,6 @@ export default class MostlyCore extends EventEmitter {
     this._config[key] = value;
   }
 
-  get config () {
-    return this._config;
-  }
-
   /**
    * Exit the process
    */
@@ -379,6 +402,13 @@ export default class MostlyCore extends EventEmitter {
    * Create a custom super error object without to start mostly
    */
   static createError (name) {
+    return SuperError.subclass(name);
+  }
+
+  /**
+   * Create a custom super error object in a running mostly instance
+   */
+  createError (name) {
     return SuperError.subclass(name);
   }
 
@@ -396,36 +426,6 @@ export default class MostlyCore extends EventEmitter {
     this._decorations[prop] = { plugin: this.plugin$, value };
     // decorate root mostly instance
     this._root[prop] = value;
-  }
-
-  /**
-   * Create a custom super error object in a running mostly instance
-   */
-  createError (name) {
-    return SuperError.subclass(name);
-  }
-
-  get errorDetails () {
-    if (this._isServer) {
-      return {
-        app: this._config.name,
-        isServer: this._isServer,
-        pattern: this.trace$.method
-      };
-    } else {
-      return {
-        app: this._config.name,
-        isServer: this._isServer,
-        pattern: this.trace$.method
-      };
-    }
-  }
-  
-  /**
-   * Return all mostly errors
-   */
-  static get errors () {
-    return Errors;
   }
 
   registerPlugins (plugins, cb) {
@@ -686,6 +686,12 @@ export default class MostlyCore extends EventEmitter {
       pattern = TinySonic(pattern);
     }
 
+    if (!_.isObject(pattern)) {
+      let error = new Errors.MostlyError(Constants.ADD_PATTERN_REQUIRED);
+      this.log.error(error);
+      throw error;
+    }
+
     // topic is needed to subscribe on a subject in NATS
     if (!pattern.topic) {
       let error = new Errors.MostlyError(Constants.NO_TOPIC_TO_SUBSCRIBE, {
@@ -694,7 +700,7 @@ export default class MostlyCore extends EventEmitter {
       });
 
       this.log.error(error);
-      this.emit('error', error);
+      throw error;
     }
 
     let origPattern = _.cloneDeep(pattern);
@@ -788,10 +794,16 @@ export default class MostlyCore extends EventEmitter {
   /**
    * Start an action.
    */
-  act(pattern, cb) {
+  act (pattern, cb) {
     // check for use quick syntax for JSON objects
     if (_.isString(pattern)) {
       pattern = TinySonic(pattern);
+    }
+
+    if (!_.isObject(pattern)) {
+      let error = new Errors.MostlyError(Constants.ACT_PATTERN_REQUIRED)
+      this.log.error(error)
+      throw error
     }
 
     // create new execution context
@@ -809,12 +821,9 @@ export default class MostlyCore extends EventEmitter {
 
     // topic is needed to subscribe on a subject in NATS
     if (!pattern.topic) {
-      let error = new Errors.MostlyError(Constants.NO_TOPIC_TO_REQUEST, {
-        pattern
-      });
-
+      let error = new Errors.MostlyError(Constants.NO_TOPIC_TO_REQUEST, { pattern });
       this.log.error(error);
-      this.emit('error', error);
+      throw error;
     }
 
     if (cb) {

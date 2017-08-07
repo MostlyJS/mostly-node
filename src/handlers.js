@@ -8,6 +8,9 @@ import Constants from './constants';
 
 const debug = makeDebug('mostly:core:handlers');
 
+/**
+ * Is called after the client has received and decoded the request
+ */
 function onClientPostRequestHandler (ctx, err) {
   // extension error
   if (err) {
@@ -42,6 +45,9 @@ function onClientPostRequestHandler (ctx, err) {
   ctx._execute(null, ctx._response.payload.result);
 }
 
+/**
+ * Is called after the client request timeout
+ */
 function onClientTimeoutPostRequestHandler (ctx, err) {
   if (err) {
     let error = null;
@@ -80,6 +86,9 @@ function onClientTimeoutPostRequestHandler (ctx, err) {
   }
 }
 
+/**
+ * Is called before the client has send the request to NATS
+ */
 function onPreRequestHandler (ctx, err) {
   let m = ctx._encoderPipeline.run(ctx._message, ctx);
 
@@ -138,6 +147,9 @@ function onPreRequestHandler (ctx, err) {
   }
 }
 
+/**
+ * Is called before the server action is executed
+ */
 function onServerPreHandler (ctx, err, value) {
   if (err) {
     if (err instanceof SuperError) {
@@ -208,6 +220,9 @@ function onServerPreHandler (ctx, err, value) {
   }
 }
 
+/**
+ * Is called before the server has received the request
+ */
 function onServerPreRequestHandler (ctx, err, value) {
   if (err) {
     if (err instanceof SuperError) {
@@ -240,6 +255,9 @@ function onServerPreRequestHandler (ctx, err, value) {
   }
 }
 
+/**
+ * Is called before the server has replied and build the message
+ */
 function onServerPreResponseHandler (ctx, err, value) {
   // check if an error was already wrapped
   if (ctx._response.error) {
@@ -288,6 +306,9 @@ function onServerPreResponseHandler (ctx, err, value) {
   }
 }
 
+/**
+ * Is called after all onClose extensions have been called
+ */
 function onClose(ctx, err, val, cb) {
   // no callback no queue processing
   if (!_.isFunction(cb)) {
