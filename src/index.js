@@ -801,9 +801,9 @@ export default class MostlyCore extends EventEmitter {
     }
 
     if (!_.isObject(pattern)) {
-      let error = new Errors.MostlyError(Constants.ACT_PATTERN_REQUIRED)
-      this.log.error(error)
-      throw error
+      let error = new Errors.MostlyError(Constants.ACT_PATTERN_REQUIRED);
+      this.log.error(error);
+      throw error;
     }
 
     // create new execution context
@@ -920,7 +920,7 @@ export default class MostlyCore extends EventEmitter {
   /**
    * Return the list of all registered actions
    */
-  list(pattern, options) {
+  list (pattern, options) {
     return this._router.list(pattern, options);
   }
 

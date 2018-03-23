@@ -84,7 +84,7 @@ export default class Extension {
     } else {
       let i = 0;
 
-      const iterate = function iterate(prevValue) {
+      const iterate = function iterate (prevValue) {
         const done = function (err, value, abort) {
           if (err) {
             callback(err);

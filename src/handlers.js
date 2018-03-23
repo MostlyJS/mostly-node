@@ -309,7 +309,7 @@ function onServerPreResponseHandler (ctx, err, value) {
 /**
  * Is called after all onClose extensions have been called
  */
-function onClose(ctx, err, val, cb) {
+function onClose (ctx, err, val, cb) {
   // no callback no queue processing
   if (!_.isFunction(cb)) {
     ctx._heavy.stop();
