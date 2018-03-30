@@ -177,8 +177,10 @@ function onServerPreResponse (ctx, req, res, next) {
   next();
 }
 
-module.exports.onClientPreRequest = [onClientPreRequest, onClientPreRequestCircuitBreaker];
-module.exports.onClientPostRequest = [onClientPostRequest];
-module.exports.onServerPreRequest = [onServerPreRequest, onServerPreRequestLoadTest];
-module.exports.onServerPreHandler = [onServerPreHandler];
-module.exports.onServerPreResponse = [onServerPreResponse];
+export default {
+  onClientPreRequest: [onClientPreRequest, onClientPreRequestCircuitBreaker],
+  onClientPostRequest: [onClientPostRequest],
+  onServerPreRequest: [onServerPreRequest, onServerPreRequestLoadTest],
+  onServerPreHandler: [onServerPreHandler],
+  onServerPreResponse: [onServerPreResponse]
+}

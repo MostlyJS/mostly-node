@@ -1185,6 +1185,10 @@ eslint@^3.0.0:
     text-table "~0.2.0"
     user-home "^2.0.0"
 
+esm@^3.0.14:
+  version "3.0.14"
+  resolved "https://registry.npmjs.org/esm/-/esm-3.0.14.tgz#a9a79b7348c8708050ff42499b5ecbec019d08dc"
+
 espree@^3.4.0:
   version "3.4.2"
   resolved "http://registry.npm.taobao.org/espree/download/espree-3.4.2.tgz#38dbdedbedc95b8961a1fbf04734a8f6a9c8c592"
@@ -3048,7 +3052,7 @@ sigmund@~1.0.0:
   version "1.0.1"
   resolved "http://registry.npm.taobao.org/sigmund/download/sigmund-1.0.1.tgz#3ff21f198cad2175f9f3b781853fd94d0d19b590"
 
-signal-exit@^3.0.0, signal-exit@^3.0.2:
+signal-exit@^3.0.0:
   version "3.0.2"
   resolved "http://registry.npm.taobao.org/signal-exit/download/signal-exit-3.0.2.tgz#b5fdc08f1287ea1178628e415e25132b73646c6d"
 

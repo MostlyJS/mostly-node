@@ -13,7 +13,7 @@ const PayloadValidationError = MostlyError.subclass('PayloadValidationError');
 const CircuitBreakerError = MostlyError.subclass('CircuitBreakerError');
 const PluginTimeoutError = MostlyError.subclass('PluginTimeoutError');
 
-module.exports = {
+export default {
   MostlyError,
   MaxRecursionError,
   ParseError,
