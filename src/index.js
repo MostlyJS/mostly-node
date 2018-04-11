@@ -29,7 +29,7 @@ import Add from './add';
 import Plugin from './plugin';
 import * as Handlers from './handlers';
 
-const debug = makeDebug('mostly:core');
+const debug = makeDebug('mostly:node');
 
 const defaultConfig = {
   timeout: 2000,      // max execution time of a request
