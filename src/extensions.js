@@ -183,4 +183,4 @@ export default {
   onServerPreRequest: [onServerPreRequest, onServerPreRequestLoadTest],
   onServerPreHandler: [onServerPreHandler],
   onServerPreResponse: [onServerPreResponse]
-}
+};
