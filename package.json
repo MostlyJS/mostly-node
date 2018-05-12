@@ -1,6 +1,6 @@
 {
   "name": "mostly-node",
-  "version": "1.0.12",
+  "version": "1.0.13",
   "description": "MostlyJS microservice on Node.js",
   "author": "Forafish",
   "license": "MIT",
