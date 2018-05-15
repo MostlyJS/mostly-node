@@ -672,6 +672,7 @@ export default class MostlyCore extends EventEmitter {
     // remove pattern which belongs to the topic
     _.each(this.list(), add => {
       if (add.pattern.topic === topic) {
+        debug('remove topic', add.pattern);
         this.router.remove(add.pattern);
       }
     });
