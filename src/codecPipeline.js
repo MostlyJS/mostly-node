@@ -13,7 +13,7 @@ export default class CodecPipeline {
    * Reset the stack and add optionally an element
    */
   reset (step) {
-    this._stack = step ? [step] : [];
+    this._stack = step? [step] : [];
     return this;
   }
 

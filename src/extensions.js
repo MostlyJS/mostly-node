@@ -48,7 +48,7 @@ function onClientPreRequest (ctx, next) {
   let request = {
     id: pattern.requestId$ || Util.randomId(),
     parentId: ctx.request$.id || pattern.requestParentId$,
-    type: pattern.pubsub$ === true ? Constants.REQUEST_TYPE_PUBSUB : Constants.REQUEST_TYPE_REQUEST
+    type: pattern.pubsub$ === true? Constants.REQUEST_TYPE_PUBSUB : Constants.REQUEST_TYPE_REQUEST
   };
 
   ctx.emit('clientPreRequest', ctx);

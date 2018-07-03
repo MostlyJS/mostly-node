@@ -522,8 +522,8 @@ export default class MostlyCore extends EventEmitter {
       meta: this.meta$ || {},
       trace: this.trace$ || {},
       request: this.request$,
-      result: result.error ? null : result.payload,
-      error: result.error ? Errio.toObject(result.error) : null
+      result: result.error? null : result.payload,
+      error: result.error? Errio.toObject(result.error) : null
     };
 
     let m = this._encoderPipeline.run(message, this);
@@ -811,7 +811,7 @@ export default class MostlyCore extends EventEmitter {
     let ctx = this.createContext();
     ctx._pattern = pattern;
     ctx._prevContext = this;
-    ctx._actCallback = _.isFunction(cb) ? cb.bind(ctx) : null;
+    ctx._actCallback = _.isFunction(cb)? cb.bind(ctx) : null;
     ctx._cleanPattern = Util.cleanFromSpecialVars(pattern);
     ctx._response = new ClientResponse();
     ctx._request = new ClientRequest();
@@ -834,10 +834,10 @@ export default class MostlyCore extends EventEmitter {
         ctx._isPromisable = true;
       } else if (Util.isAsyncFunction(cb)) {
         ctx._actCallback = cb.bind(ctx);
-        ctx._isPromisable = true;        
+        ctx._isPromisable = true;
       } else {
         ctx._actCallback = cb.bind(ctx);
-        ctx._isPromisable = false;        
+        ctx._isPromisable = false;
       }
     }
     

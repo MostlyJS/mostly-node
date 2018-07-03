@@ -2,7 +2,7 @@ import _ from 'lodash';
 import Co from 'co';
 
 const lut = [];
-for (let i = 0; i < 256; i++) { lut[i] = (i < 16 ? '0' : '') + (i).toString(16); }
+for (let i = 0; i < 256; i++) { lut[i] = (i < 16? '0' : '') + (i).toString(16); }
 
 export default class Util {
 
