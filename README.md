@@ -39,14 +39,14 @@ npm install mostly-node
 var mostly = require('mostly-node')()
 
 // register the service
-mostly.add({topic: 'sample', cmd: 'math'}, function (msg, done) {
+mostly.add({ topic: 'sample', cmd: 'math' }, function (msg, done) {
   var rate  = 0.13;
   var total = msg.foo * (1 + rate);
-  done(null, {total: total});
+  done(null, { total: total });
 });
 
 // call the service
-mostly.act({topic: 'sample', cmd: 'math', foo: 100}, function (err, result) {
+mostly.act({ topic: 'sample', cmd: 'math', foo: 100 }, function (err, result) {
   console.log(result.total);
 });
 ```
