@@ -1,5 +1,3 @@
-'use strict';
-
 const semver = require('semver');
 
 // Check the bare-minimum version of mostly-node

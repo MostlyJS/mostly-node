@@ -1,5 +1,3 @@
-'use strict';
-
 const _ = require('lodash');
 const Reply = require('./reply');
 const Util = require('./util');

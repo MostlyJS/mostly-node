@@ -1,5 +1,3 @@
-'use strict';
-
 const EventEmitter = require('events');
 const Os = require('os');
 const Bloomrun = require('bloomrun');

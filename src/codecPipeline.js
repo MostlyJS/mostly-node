@@ -1,5 +1,3 @@
-'use strict';
-
 class CodecPipeline {
   constructor () {
     this._stack = [];

@@ -1,5 +1,3 @@
-'use strict';
-
 function Parse (data) {
   if (!(this instanceof Parse)) {
     return new Parse(data);

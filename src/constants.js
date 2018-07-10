@@ -1,5 +1,3 @@
-'use strict';
-
 // Errors messages
 module.exports = {
   // General

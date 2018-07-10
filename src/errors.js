@@ -1,5 +1,3 @@
-'use strict';
-
 const SuperError = require('super-error');
 
 const MostlyError = SuperError.subclass('MostlyError');

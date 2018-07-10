@@ -1,5 +1,3 @@
-'use strict';
-
 const Constants = require('./constants');
 const Util = require('./util');
 const Errors = require('./errors');

@@ -1,5 +1,3 @@
-'use strict';
-
 const _ = require('lodash');
 const makeDebug = require('debug');
 const Errio = require('errio');

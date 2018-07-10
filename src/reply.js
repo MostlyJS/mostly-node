@@ -1,5 +1,3 @@
-'use strict';
-
 class Reply {
   constructor (request, response, extensionCallback) {
     this._request = request;

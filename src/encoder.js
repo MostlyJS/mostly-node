@@ -1,5 +1,3 @@
-'use strict';
-
 const SafeStringify = require('fast-safe-stringify');
 
 class Encoder {

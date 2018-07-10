@@ -1,5 +1,3 @@
-'use strict';
-
 const _ = require('lodash');
 const Co = require('co');
 const Util = require('./util');

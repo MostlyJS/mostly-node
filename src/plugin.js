@@ -1,5 +1,3 @@
-'use strict';
-
 class Plugin {
   constructor (plugin) {
     this.attributes = plugin.attributes || {};

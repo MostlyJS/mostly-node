@@ -1,12 +1,10 @@
-'use strict';
-
 const EventEmitter = require('events');
 
 /**
  * Based on https://docs.microsoft.com/en-us/azure/architecture/patterns/circuit-breaker
- * 
- * A circuit breaker acts as a proxy as a state machine for operations that might fail. 
- * 
+ *
+ * A circuit breaker acts as a proxy as a state machine for operations that might fail.
+ *
  * @class CircuitBreaker
  * @extends {EventEmitter}
  */

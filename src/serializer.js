@@ -1,5 +1,3 @@
-'use strict';
-
 function inbound (ctx) {
   return {
     id: ctx.request$.id,
