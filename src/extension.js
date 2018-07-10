@@ -1,8 +1,10 @@
-import _ from 'lodash';
-import Reply from './reply';
-import Util from './util';
+'use strict';
 
-export default class Extension {
+const _ = require('lodash');
+const Reply = require('./reply');
+const Util = require('./util');
+
+class Extension {
 
   constructor (type) {
     this._stack = [];
@@ -108,3 +110,5 @@ export default class Extension {
     }
   }
 }
+
+module.exports = Extension;

@@ -1,33 +1,35 @@
-import EventEmitter from 'events';
-import Os from 'os';
-import Bloomrun from 'bloomrun';
-import Errio from 'errio';
-import Heavy from 'heavy';
-import _ from 'lodash';
-import Pino from 'pino';
-import TinySonic from 'tinysonic';
-import SuperError from 'super-error';
-import Co from 'co';
-import makeDebug from 'debug';
+'use strict';
 
-import BeforeExit from './beforeExit';
-import Errors from './errors';
-import Constants from './constants';
-import Extension from './extension';
-import Util from './util';
-import NatsTransport from './transport';
-import DefaultExtensions from './extensions';
-import DefaultEncoder from './encoder';
-import DefaultDecoder from './decoder';
-import ServerResponse from './serverResponse';
-import ServerRequest from './serverRequest';
-import ClientRequest from './clientRequest';
-import ClientResponse from './clientResponse';
-import Serializers from './serializer';
-import CodecPipeline from './codecPipeline';
-import Add from './add';
-import Plugin from './plugin';
-import * as Handlers from './handlers';
+const EventEmitter = require('events');
+const Os = require('os');
+const Bloomrun = require('bloomrun');
+const Errio = require('errio');
+const Heavy = require('heavy');
+const _ = require('lodash');
+const Pino = require('pino');
+const TinySonic = require('tinysonic');
+const SuperError = require('super-error');
+const Co = require('co');
+const makeDebug = require('debug');
+
+const BeforeExit = require('./beforeExit');
+const Errors = require('./errors');
+const Constants = require('./constants');
+const Extension = require('./extension');
+const Util = require('./util');
+const NatsTransport = require('./transport');
+const DefaultExtensions = require('./extensions');
+const DefaultEncoder = require('./encoder');
+const DefaultDecoder = require('./decoder');
+const ServerResponse = require('./serverResponse');
+const ServerRequest = require('./serverRequest');
+const ClientRequest = require('./clientRequest');
+const ClientResponse = require('./clientResponse');
+const Serializers = require('./serializer');
+const CodecPipeline = require('./codecPipeline');
+const Add = require('./add');
+const Plugin = require('./plugin');
+const Handlers = require('./handlers');
 
 const debug = makeDebug('mostly:node');
 
@@ -74,7 +76,7 @@ const defaultConfig = {
   }
 };
 
-export default class MostlyCore extends EventEmitter {
+class MostlyCore extends EventEmitter {
 
   constructor (transport, options) {
     super();
@@ -942,3 +944,5 @@ export default class MostlyCore extends EventEmitter {
     });
   }
 }
+
+module.exports = MostlyCore;

@@ -1,4 +1,6 @@
-export default class ClientRequest {
+'use strict';
+
+class ClientRequest {
 
   constructor () {
     this._request = {};
@@ -16,10 +18,10 @@ export default class ClientRequest {
     this._request.value = value;
   }
 
-
   set error (error) {
     this._request.error = error;
   }
 
 }
 
+module.exports = ClientRequest;

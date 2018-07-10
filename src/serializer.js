@@ -1,3 +1,5 @@
+'use strict';
+
 function inbound (ctx) {
   return {
     id: ctx.request$.id,
@@ -13,7 +15,7 @@ function outbound (ctx) {
   };
 }
 
-export default {
+module.exports = {
   inbound,
   outbound
 };

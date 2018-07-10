@@ -1,6 +1,8 @@
-import _ from 'lodash';
+'use strict';
 
-export default class ServerResponse {
+const _ = require('lodash');
+
+class ServerResponse {
 
   constructor () {
     this._response = {};
@@ -49,3 +51,5 @@ export default class ServerResponse {
   }
 
 }
+
+module.exports = ServerResponse;

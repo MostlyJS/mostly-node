@@ -1,3 +1,5 @@
+'use strict';
+
 function Parse (data) {
   if (!(this instanceof Parse)) {
     return new Parse(data);
@@ -13,9 +15,11 @@ function Parse (data) {
   }
 }
 
-export default class Decoder {
+class Decoder {
 
   static decode (msg) {
     return Parse(msg);
   }
 }
+
+module.exports = Decoder;

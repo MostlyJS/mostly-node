@@ -1,10 +1,12 @@
-import _ from 'lodash';
-import Co from 'co';
+'use strict';
+
+const _ = require('lodash');
+const Co = require('co');
 
 const lut = [];
 for (let i = 0; i < 256; i++) { lut[i] = (i < 16? '0' : '') + (i).toString(16); }
 
-export default class Util {
+class Util {
 
   static natsWildcardToRegex (subject) {
     let hasTokenWildcard = subject.indexOf('*') > -1;
@@ -186,3 +188,5 @@ export default class Util {
     return false;
   }
 }
+
+module.exports = Util;

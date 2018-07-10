@@ -1,7 +1,9 @@
-import Constants from './constants';
-import Util from './util';
+'use strict';
+
+const Constants = require('./constants');
+const Util = require('./util');
 const Errors = require('./errors');
-import CircuitBreaker from './circuitBreaker';
+const CircuitBreaker = require('./circuitBreaker');
 
 function onClientPreRequest (ctx, next) {
   let pattern = ctx._pattern;
@@ -177,7 +179,7 @@ function onServerPreResponse (ctx, req, res, next) {
   next();
 }
 
-export default {
+module.exports = {
   onClientPreRequest: [onClientPreRequest, onClientPreRequestCircuitBreaker],
   onClientPostRequest: [onClientPostRequest],
   onServerPreRequest: [onServerPreRequest, onServerPreRequestLoadTest],

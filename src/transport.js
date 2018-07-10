@@ -1,4 +1,6 @@
-export default class NatsTransport {
+'use strict';
+
+class NatsTransport {
 
   constructor (params) {
     this.nc = params.transport;
@@ -36,3 +38,5 @@ export default class NatsTransport {
     return this.nc.request.apply(this.nc, arguments);
   }
 }
+
+module.exports = NatsTransport;

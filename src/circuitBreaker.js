@@ -1,4 +1,6 @@
-import EventEmitter from 'events';
+'use strict';
+
+const EventEmitter = require('events');
 
 /**
  * Based on https://docs.microsoft.com/en-us/azure/architecture/patterns/circuit-breaker
@@ -8,7 +10,7 @@ import EventEmitter from 'events';
  * @class CircuitBreaker
  * @extends {EventEmitter}
  */
-export default class CircuitBreaker extends EventEmitter {
+class CircuitBreaker extends EventEmitter {
   constructor (options) {
     super();
 
@@ -141,3 +143,5 @@ export default class CircuitBreaker extends EventEmitter {
     }
   }
 }
+
+module.exports = CircuitBreaker;

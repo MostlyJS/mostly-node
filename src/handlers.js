@@ -1,10 +1,12 @@
-import _ from 'lodash';
-import makeDebug from 'debug';
-import Errio from 'errio';
-import SuperError from 'super-error';
+'use strict';
 
-import Errors from './errors';
-import Constants from './constants';
+const _ = require('lodash');
+const makeDebug = require('debug');
+const Errio = require('errio');
+const SuperError = require('super-error');
+
+const Errors = require('./errors');
+const Constants = require('./constants');
 
 const debug = makeDebug('mostly:core:handlers');
 
@@ -345,7 +347,7 @@ function onClose (ctx, err, val, cb) {
   });
 }
 
-export {
+module.exports = {
   onClientPostRequestHandler,
   onClientTimeoutPostRequestHandler,
   onPreRequestHandler,

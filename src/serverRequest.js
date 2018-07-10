@@ -1,4 +1,6 @@
-export default class ServerRequest {
+'use strict';
+
+class ServerRequest {
 
   constructor (payload) {
     this._request = {};

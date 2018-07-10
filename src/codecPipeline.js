@@ -1,4 +1,6 @@
-export default class CodecPipeline {
+'use strict';
+
+class CodecPipeline {
   constructor () {
     this._stack = [];
     return this;
@@ -42,3 +44,5 @@ export default class CodecPipeline {
     return { value, error: firstError };
   }
 }
+
+module.exports = CodecPipeline;

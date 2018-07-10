@@ -1,4 +1,6 @@
-export default class Plugin {
+'use strict';
+
+class Plugin {
   constructor (plugin) {
     this.attributes = plugin.attributes || {};
     this.options = plugin.options;
@@ -6,3 +8,5 @@ export default class Plugin {
     this.register = plugin.register;
   }
 }
+
+module.exports = Plugin;

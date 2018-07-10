@@ -1,7 +1,9 @@
-import _ from 'lodash';
-import Errors from './errors';
+'use strict';
 
-export default class BeforeExit {
+const _ = require('lodash');
+const Errors = require('./errors');
+
+class BeforeExit {
 
   constructor () {
     this.actions = [];
@@ -46,3 +48,7 @@ export default class BeforeExit {
     });
   }
 }
+
+
+
+module.exports = BeforeExit;

@@ -1,8 +1,10 @@
-import semver from 'semver';
+'use strict';
+
+const semver = require('semver');
 
 // Check the bare-minimum version of mostly-node
 // Provide consistent interface to register plugins even when the api is changed
-export default function checkPlugin (fn, version) {
+function checkPlugin (fn, version) {
   if (typeof fn !== 'function') {
     throw new TypeError(`mostly-plugin expects a function, instead got a '${typeof fn}'`);
   }
@@ -20,3 +22,5 @@ export default function checkPlugin (fn, version) {
 
   return fn;
 }
+
+module.exports = checkPlugin;

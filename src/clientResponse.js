@@ -1,4 +1,6 @@
-export default class ClientResponse {
+'use strict';
+
+class ClientResponse {
 
   constructor () {
     this._response = {};
@@ -21,3 +23,5 @@ export default class ClientResponse {
   }
 
 }
+
+module.exports = ClientResponse;

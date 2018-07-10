@@ -1,3 +1,5 @@
+'use strict';
+
 const SuperError = require('super-error');
 
 const MostlyError = SuperError.subclass('MostlyError');
@@ -13,7 +15,7 @@ const PayloadValidationError = MostlyError.subclass('PayloadValidationError');
 const CircuitBreakerError = MostlyError.subclass('CircuitBreakerError');
 const PluginTimeoutError = MostlyError.subclass('PluginTimeoutError');
 
-export default {
+module.exports = {
   MostlyError,
   MaxRecursionError,
   ParseError,

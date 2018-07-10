@@ -1,4 +1,6 @@
-export default class Reply {
+'use strict';
+
+class Reply {
   constructor (request, response, extensionCallback) {
     this._request = request;
     this._response = response;
@@ -43,3 +45,5 @@ export default class Reply {
     }
   }
 }
+
+module.exports = Reply;

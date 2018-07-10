@@ -1,8 +1,10 @@
-import _ from 'lodash';
-import Co from 'co';
-import Util from './util';
+'use strict';
 
-export default class Add {
+const _ = require('lodash');
+const Co = require('co');
+const Util = require('./util');
+
+class Add {
 
   constructor (actMeta, options) {
     this.actMeta = actMeta;
@@ -68,3 +70,5 @@ export default class Add {
   }
 
 }
+
+module.exports = Add;

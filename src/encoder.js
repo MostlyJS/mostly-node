@@ -1,6 +1,8 @@
-import SafeStringify from 'fast-safe-stringify';
+'use strict';
 
-export default class Encoder {
+const SafeStringify = require('fast-safe-stringify');
+
+class Encoder {
 
   static encode (msg) {
     try {
@@ -12,3 +14,5 @@ export default class Encoder {
     }
   }
 }
+
+module.exports = Encoder;
