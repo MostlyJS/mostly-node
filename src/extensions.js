@@ -1,7 +1,7 @@
 const Constants = require('./constants');
 const Util = require('./util');
 const Errors = require('./errors');
-const CircuitBreaker = require('./circuitBreaker');
+const CircuitBreaker = require('./circuit-breaker');
 
 function onClientPreRequest (ctx, next) {
   let pattern = ctx._pattern;

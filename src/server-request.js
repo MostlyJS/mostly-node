@@ -25,6 +25,7 @@ class ServerRequest {
   set error (error) {
     this._request.error = error;
   }
-
 }
+
+module.exports = ServerRequest;
 
