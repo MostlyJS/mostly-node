@@ -1,6 +1,6 @@
 // Project: https://github.com/MostlyJS/mostly-node
 
-import events = require('events');
+const events = require('events');
 
 declare const Buffer
 
