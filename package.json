@@ -31,6 +31,7 @@
     "fast-safe-stringify": "^1.1.13",
     "heavy": "^4.0.3",
     "lodash": "^4.17.4",
+    "nats": "^1.0.0",
     "pino": "^4.3.0",
     "semver": "^5.4.1",
     "super-error": "^2.0.0",
