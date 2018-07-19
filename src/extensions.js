@@ -26,7 +26,7 @@ function onClientPreRequest (ctx, next) {
   ctx.trace$.timestamp = currentTime;
   ctx.trace$.service = pattern.topic;
   ctx.trace$.method = Util.pattern(pattern);
-  
+
   // detect recursion
   if (ctx._config.maxRecursion > 1) {
     const callSignature = `${ctx.trace$.traceId}:${ctx.trace$.method}`;

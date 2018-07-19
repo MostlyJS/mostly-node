@@ -288,7 +288,7 @@ class MostlyCore extends EventEmitter {
       };
     }
   }
-  
+
   /**
    * Return all mostly errors
    */
@@ -840,7 +840,7 @@ class MostlyCore extends EventEmitter {
         ctx._isPromisable = false;
       }
     }
-    
+
     const promise = new Promise((resolve, reject) => {
       ctx._execute = (err, result) => {
         if (ctx._config.circuitBreaker.enabled) {
@@ -876,7 +876,7 @@ class MostlyCore extends EventEmitter {
         }
       };
     });
-    
+
     ctx._extensions.onClientPreRequest.dispatch(ctx, (err) => {
       return Handlers.onPreRequestHandler(ctx, err);
     });
