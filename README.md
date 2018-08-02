@@ -25,8 +25,8 @@ Please see the [documentation site](https://mostlyjs.github.io).
 
 #### 1. Install Mostly-node and NATS driver
 ```bash
-npm install nats
-npm install mostly-node
+npm install nats --save
+npm install mostly-node --save
 ```
 
 #### 2. Install and Run NATS Server
